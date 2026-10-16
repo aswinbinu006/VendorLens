@@ -12,7 +12,6 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/dashboard';
 
   const [activeTab, setActiveTab] = useState<'signin' | 'request'>('signin');
 
@@ -42,7 +41,9 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(email.trim(), password);
-      navigate(redirectPath, { replace: true });
+      const isSuper = email.trim().toLowerCase() === 'admin@example.com';
+      const destination = searchParams.get('redirect') || (isSuper ? '/companies' : '/dashboard');
+      navigate(destination, { replace: true });
     } catch (err: any) {
       setErrorMessage(err?.message || 'Invalid email or password.');
     } finally {

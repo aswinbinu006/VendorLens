@@ -12,7 +12,6 @@ import {
   LogOut,
   Menu,
   X,
-  Users,
   ExternalLink,
   ShieldCheck,
 } from 'lucide-react';
@@ -38,50 +37,55 @@ export const AppLayout: React.FC<{
   const effectivePendingMatches = pendingMatchesCount ?? dashboardData?.pendingMatches ?? 0;
   const effectiveNewAlerts = newAlertsCount ?? dashboardData?.newAlerts ?? 0;
 
-  const navItems: NavItem[] = [
-    {
-      label: 'Dashboard',
-      path: '/dashboard',
-      icon: <LayoutDashboard className="w-4 h-4" />,
-    },
-    {
-      label: 'Vendors Watchlist',
-      path: '/vendors',
-      icon: <Building2 className="w-4 h-4" />,
-    },
-    {
-      label: 'Match Review',
-      path: '/matches',
-      icon: <GitCompare className="w-4 h-4" />,
-      badge: effectivePendingMatches > 0 ? effectivePendingMatches : undefined,
-    },
-    {
-      label: 'Alerts Inbox',
-      path: '/alerts',
-      icon: <Bell className="w-4 h-4" />,
-      badge: effectiveNewAlerts > 0 ? effectiveNewAlerts : undefined,
-    },
-    {
-      label: 'Ingestion Status',
-      path: '/ingestion',
-      icon: <RefreshCw className="w-4 h-4" />,
-    },
-    {
-      label: 'Audit Log',
-      path: '/audit',
-      icon: <FileText className="w-4 h-4" />,
-    },
-    {
-      label: 'Fuzzy Engine Rules',
-      path: '/settings/fuzzy',
-      icon: <Sliders className="w-4 h-4" />,
-    },
-    {
-      label: 'Client Companies',
-      path: '/companies',
-      icon: <Users className="w-4 h-4" />,
-    },
-  ];
+  const isSuperAdmin = user?.email?.toLowerCase() === 'admin@example.com';
+
+  const navItems: NavItem[] = isSuperAdmin
+    ? [
+        {
+          label: 'Client Companies & Tenants',
+          path: '/companies',
+          icon: <Building2 className="w-4 h-4" />,
+        },
+      ]
+    : [
+        {
+          label: 'Dashboard',
+          path: '/dashboard',
+          icon: <LayoutDashboard className="w-4 h-4" />,
+        },
+        {
+          label: 'Vendors Watchlist',
+          path: '/vendors',
+          icon: <Building2 className="w-4 h-4" />,
+        },
+        {
+          label: 'Match Review',
+          path: '/matches',
+          icon: <GitCompare className="w-4 h-4" />,
+          badge: effectivePendingMatches > 0 ? effectivePendingMatches : undefined,
+        },
+        {
+          label: 'Alerts Inbox',
+          path: '/alerts',
+          icon: <Bell className="w-4 h-4" />,
+          badge: effectiveNewAlerts > 0 ? effectiveNewAlerts : undefined,
+        },
+        {
+          label: 'Ingestion Status',
+          path: '/ingestion',
+          icon: <RefreshCw className="w-4 h-4" />,
+        },
+        {
+          label: 'Audit Log',
+          path: '/audit',
+          icon: <FileText className="w-4 h-4" />,
+        },
+        {
+          label: 'Fuzzy Engine Rules',
+          path: '/settings/fuzzy',
+          icon: <Sliders className="w-4 h-4" />,
+        },
+      ];
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
@@ -106,7 +110,7 @@ export const AppLayout: React.FC<{
                 VendorRisk
               </span>
               <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                Pharma RegOps
+                {isSuperAdmin ? 'Platform Administration' : 'Pharma RegOps'}
               </span>
             </div>
           </Link>

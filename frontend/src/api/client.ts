@@ -274,4 +274,18 @@ export const apiClient = {
       body: JSON.stringify(input),
     });
   },
+
+  async getAccessRequests(): Promise<{
+    data: Array<{
+      id: string;
+      companyName: string;
+      email: string;
+      contactName: string;
+      notes?: string;
+      createdAt: string;
+      status: 'PENDING' | 'PROVISIONED';
+    }>;
+  }> {
+    return request('/auth/access-requests');
+  },
 };

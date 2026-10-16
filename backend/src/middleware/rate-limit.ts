@@ -19,10 +19,10 @@ export const globalLimiter = rateLimit({
   handler: rateLimitHandler,
 });
 
-// Stricter limiter on login to protect against credential guessing (docs/10): 5 requests per 15 minutes
+// Stricter limiter on login to protect against credential guessing (docs/10): 5 requests per 15m in prod, 50 in dev
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: process.env.NODE_ENV === 'production' ? 5 : 50,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   handler: rateLimitHandler,
