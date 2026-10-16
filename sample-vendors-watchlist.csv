@@ -1,16 +1,21 @@
 name,country,category,criticality
-Bionpharma Inc.,United States,Finished Dosage,3
-Fresenius Kabi LLC,United States,Injectables & Infusion,4
-Accord Healthcare Inc.,United States,Generics,3
-Aurobindo Pharma Ltd,India,Active Pharmaceutical Ingredients,3
-Zhejiang Jingwei Pharmaceutical,China,Raw Materials,2
-Viona Pharmaceuticals Inc,United States,Generics,3
-Pfizer Inc.,United States,Primary Manufacturer,5
-Novartis AG,Switzerland,Biologics,4
-Lonza Group AG,Switzerland,Contract Development,4
-Catalent Pharma Solutions,United States,Contract Manufacturing,4
-Dr. Reddy's Laboratories,India,Generics & API,3
-Teva Pharmaceutical Industries,Israel,Generics,4
-Thermo Fisher Scientific,United States,Clinical Supply,3
-Evonik Industries AG,Germany,Excipients & Chemicals,3
-Siegfried Holding AG,Switzerland,Drug Substance,3
+Sun Pharmaceutical Industries Ltd,India,Formulations & API,5
+Dr. Reddy's Laboratories Ltd,India,Generics & Biosimilars,5
+Cipla Limited,India,Respiratory & Finished Formulations,5
+Aurobindo Pharma Ltd,India,Antibiotics & Generics,4
+Lupin Limited,India,Oral Solids & Complex Generics,4
+Zydus Lifesciences Ltd,India,Formulations & Biologicals,4
+Glenmark Pharmaceuticals Ltd,India,Dermatology & Respiratory,3
+Torrent Pharmaceuticals Ltd,India,Cardiovascular & CNS,3
+Alkem Laboratories Ltd,India,Anti-Infectives & Finished Dosages,3
+Biocon Limited,India,Biologics & Biosimilars,4
+Divi's Laboratories Ltd,India,Active Pharmaceutical Ingredients,4
+Mankind Pharma Ltd,India,Finished Dosage Formulations,3
+Intas Pharmaceuticals Ltd,India,Injectables & Biosimilars,4
+Macleods Pharmaceuticals Ltd,India,Generics & Anti-TB,3
+Ipca Laboratories Ltd,India,Active Pharmaceutical Ingredients,3
+JB Chemicals & Pharmaceuticals Ltd,India,Gastro & Finished Formulations,3
+Granules India Ltd,India,API & Pharmaceutical Formulation Intermediates,3
+Laurus Labs Ltd,India,Antiretroviral & API Synthesis,3
+Natco Pharma Ltd,India,Oncology & Specialized Generics,4
+Wockhardt Ltd,India,Sterile Injectables & Biotechnology,4

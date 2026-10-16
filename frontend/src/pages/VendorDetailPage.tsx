@@ -49,20 +49,7 @@ export const VendorDetailPage: React.FC = () => {
   const scoreValue = scoreDetail?.score ?? vendor.currentScore ?? 0;
   const scoreLevel: RiskLevel = (scoreDetail?.level ?? vendor.currentLevel ?? 'low') as RiskLevel;
 
-  // SVG Radial Gauge calculation (180 degree semi-circle arc)
-  const arcRadius = 70;
-  const arcLength = Math.PI * arcRadius; // ~219.91
   const clampedScore = Math.max(0, Math.min(100, scoreValue));
-  const strokeDashoffset = arcLength - (clampedScore / 100) * arcLength;
-
-  const gaugeColors: Record<RiskLevel, string> = {
-    low: '#10b981', // emerald-500
-    medium: '#f59e0b', // amber-500
-    high: '#f97316', // orange-500
-    critical: '#ef4444', // red-500
-  };
-
-  const currentGaugeColor = gaugeColors[scoreLevel] || '#10b981';
 
   return (
     <div className="space-y-6">
@@ -121,42 +108,46 @@ export const VendorDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Circular Risk Gauge */}
-        <div className="flex flex-col items-center justify-center bg-slate-50/70 border border-slate-200 p-4 rounded-xl min-w-[210px] flex-shrink-0">
-          <div className="relative flex flex-col items-center justify-center">
-            <svg viewBox="0 0 180 110" className="w-44 h-[105px]">
-              {/* Background Track */}
-              <path
-                d="M 20 95 A 70 70 0 0 1 160 95"
-                fill="none"
-                stroke="#e2e8f0"
-                strokeWidth="12"
-                strokeLinecap="round"
-              />
-              {/* Active Value Track */}
-              <path
-                d="M 20 95 A 70 70 0 0 1 160 95"
-                fill="none"
-                stroke={currentGaugeColor}
-                strokeWidth="12"
-                strokeLinecap="round"
-                strokeDasharray={arcLength}
-                strokeDashoffset={strokeDashoffset}
-                style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}
-              />
-            </svg>
-            <div className="absolute top-[38px] flex flex-col items-center justify-center text-center">
-              <span className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight leading-none">
-                {scoreValue.toFixed(1)}
-              </span>
-              <span className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-1.5">
-                Overall Risk (0-100)
-              </span>
+        {/* Enterprise Horizontal 4-Band Risk Score Display (Frontend Design Rules §6) */}
+        <div className="bg-[#FFFFFF] border border-[#E0E0E0] p-4 min-w-[280px] flex-shrink-0">
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-[12px] font-semibold text-[#525252]">Overall Risk Score</span>
+            <span className="text-[28px] font-semibold text-[#161616] font-mono leading-none">
+              {scoreValue.toFixed(1)}
+            </span>
+          </div>
+
+          <div className="mb-3">
+            <RiskBadge level={scoreLevel} score={scoreValue} size="sm" />
+          </div>
+
+          {/* 4-Band Horizontal Bar */}
+          <div className="relative pt-1 pb-1">
+            <div className="h-3 w-full flex border border-[#E0E0E0] overflow-hidden">
+              <div className="w-1/4 bg-[#24A148]" title="Low (0-24)" />
+              <div className="w-1/4 bg-[#F1C21B]" title="Medium (25-49)" />
+              <div className="w-1/4 bg-[#FF832B]" title="High (50-74)" />
+              <div className="w-1/4 bg-[#DA1E28]" title="Critical (75-100)" />
+            </div>
+
+            {/* Static marker line at the score */}
+            <div
+              className="absolute top-0 bottom-1 w-0.5 bg-[#161616] -ml-[1px]"
+              style={{ left: `${clampedScore}%` }}
+              title={`Score: ${scoreValue.toFixed(1)}`}
+            >
+              <div className="w-2 h-1 bg-[#161616] -ml-[3px] -mt-1" />
             </div>
           </div>
-          <span className="text-xs font-bold uppercase mt-1 tracking-wide" style={{ color: currentGaugeColor }}>
-            {scoreLevel.toUpperCase()} RISK
-          </span>
+
+          {/* Cutoff Labels */}
+          <div className="flex justify-between text-[11px] text-[#525252] font-mono mt-0.5">
+            <span>0</span>
+            <span>25</span>
+            <span>50</span>
+            <span>75</span>
+            <span>100</span>
+          </div>
         </div>
       </div>
 
