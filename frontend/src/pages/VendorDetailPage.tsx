@@ -5,6 +5,7 @@ import {
   useVendorScore,
   useVendorScoreHistory,
   useVendorSignals,
+  useUpdateVendor,
 } from '@/hooks/useVendor';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/States';
 import { RiskBadge } from '@/components/common/RiskBadge';
@@ -16,6 +17,8 @@ import {
   Info,
   Layers,
   Sparkles,
+  ShieldCheck,
+  Check,
 } from 'lucide-react';
 import type { RiskLevel } from '@/types/api';
 
@@ -31,6 +34,36 @@ export const VendorDetailPage: React.FC = () => {
   const { data: scoreDetail, isLoading: scoreLoading } = useVendorScore(vendorId);
   const { data: scoreHistory, isLoading: historyLoading } = useVendorScoreHistory(vendorId);
   const { data: signalsData, isLoading: signalsLoading } = useVendorSignals(vendorId, signalPage, 10);
+  const updateVendor = useUpdateVendor(vendorId);
+
+  const [decisionStatus, setDecisionStatus] = useState<string>('approved');
+  const [decisionNotes, setDecisionNotes] = useState<string>('');
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (vendor?.notes !== undefined) {
+      const match = (vendor.notes || '').match(/\[STATUS:\s*([A-Z_]+)\]/);
+      const statusKey = match?.[1];
+      const parsedStatus = statusKey && ['APPROVED', 'UNDER_REVIEW', 'DISQUALIFIED'].includes(statusKey)
+        ? statusKey.toLowerCase()
+        : 'approved';
+      setDecisionStatus(parsedStatus);
+      setDecisionNotes((vendor.notes || '').replace(/\[STATUS: [A-Z_]+\]\s*/g, '').trim());
+    }
+  }, [vendor?.notes]);
+
+  const handleSaveDecision = async () => {
+    const statusPrefix = `[STATUS: ${decisionStatus.toUpperCase()}]`;
+    const cleanNotes = decisionNotes.trim();
+    const combined = cleanNotes ? `${statusPrefix} ${cleanNotes}` : statusPrefix;
+    try {
+      await updateVendor.mutateAsync({ notes: combined });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      alert(`Failed to save business decision: ${err?.message || 'Error'}`);
+    }
+  };
 
   if (vendorLoading || scoreLoading) {
     return <LoadingState message="Loading supplier dossier and regulatory score..." count={4} />;
@@ -150,6 +183,101 @@ export const VendorDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Business Partnership Decision (Human Authority) */}
+      <section className="bg-[#FFFFFF] border border-[#E0E0E0] p-5 space-y-4" aria-label="Business Partnership Decision">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E0E0E0] pb-3">
+          <div>
+            <h2 className="text-sm font-semibold text-[#161616] flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#0F62FE]" />
+              Business Partnership Decision (Human Authority)
+            </h2>
+            <p className="text-xs text-[#525252] mt-0.5">
+              The AI engine calculates risk scores, but <strong>human officers hold 100% authority</strong> to decide whether your organization continues business with this supplier.
+            </p>
+          </div>
+
+          {/* Current Decision Badge */}
+          <span className={`text-xs font-semibold px-2.5 py-1 border ${
+            decisionStatus === 'disqualified'
+              ? 'bg-[#FFD7D9] text-[#A2191F] border-[#A2191F]'
+              : decisionStatus === 'under_review'
+              ? 'bg-[#FCF4D6] text-[#684E00] border-[#684E00]'
+              : 'bg-[#DEFBE6] text-[#0E6027] border-[#0E6027]'
+          }`}>
+            Status: {decisionStatus === 'disqualified'
+              ? 'Discontinue Business (Disqualified)'
+              : decisionStatus === 'under_review'
+              ? 'Under Review (Audit Required)'
+              : 'Continue Business (Approved)'}
+          </span>
+        </div>
+
+        {/* Decision Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div>
+            <label className="block text-xs font-semibold text-[#525252] mb-1">
+              Procurement &amp; Partnership Status
+            </label>
+            <select
+              value={decisionStatus}
+              onChange={(e) => setDecisionStatus(e.target.value)}
+              className="w-full h-10 px-3 bg-[#FFFFFF] border border-[#8D8D8D] text-xs text-[#161616] focus:outline-2 focus:outline-[#0F62FE]"
+            >
+              <option value="approved">Continue Business (Approved)</option>
+              <option value="under_review">Under Review (Audit Required)</option>
+              <option value="disqualified">Discontinue Business (Disqualified)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[#525252] mb-1">
+              Decision Justification / Compliance Notes
+            </label>
+            <input
+              type="text"
+              value={decisionNotes}
+              onChange={(e) => setDecisionNotes(e.target.value)}
+              placeholder="e.g. Cleared after reviewing 2025 FDA inspection findings..."
+              className="w-full h-10 px-3 bg-[#FFFFFF] border border-[#8D8D8D] text-xs text-[#161616] focus:outline-2 focus:outline-[#0F62FE]"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSaveDecision}
+              disabled={updateVendor.isPending}
+              className="flex-1 h-10 px-4 bg-[#0F62FE] hover:bg-[#0050E6] text-[#FFFFFF] text-xs font-semibold border border-[#0F62FE] disabled:opacity-50 cursor-pointer"
+            >
+              {updateVendor.isPending ? 'Saving...' : 'Save Business Decision'}
+            </button>
+            {saveSuccess && (
+              <span className="text-xs font-semibold text-[#0E6027] inline-flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> Saved
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Verified Incidents Summary */}
+        <div className="text-xs text-[#525252] pt-1 flex flex-wrap items-center gap-4 border-t border-[#E0E0E0]">
+          <span>
+            Verified Official FDA Signals: <strong className="text-[#161616]">{signalsData?.total ?? 0} confirmed recalls</strong>
+          </span>
+          <span>•</span>
+          <span>
+            Current Risk Index: <strong className="text-[#161616]">{scoreValue.toFixed(1)} / 100 ({scoreLevel.toUpperCase()} RISK)</strong>
+          </span>
+          <span>•</span>
+          <Link
+            to="/matches"
+            className="text-[#0F62FE] hover:underline font-semibold"
+          >
+            Review pending match queue &rarr;
+          </Link>
+        </div>
+      </section>
 
       {/* Tabs */}
       <div className="border-b border-slate-200">

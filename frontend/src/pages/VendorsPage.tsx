@@ -163,6 +163,35 @@ export const VendorsPage: React.FC = () => {
       cell: (row) => <CriticalityBadge value={row.criticality} />,
     },
     {
+      key: 'decision',
+      header: 'Procurement Status',
+      align: 'center',
+      cell: (row) => {
+        const rawNotes = row.notes || '';
+        const match = rawNotes.match(/\[STATUS:\s*([A-Z_]+)\]/);
+        const status = match ? match[1] : 'APPROVED';
+        if (status === 'DISQUALIFIED') {
+          return (
+            <span className="text-[11px] font-semibold px-2 py-0.5 bg-[#FFD7D9] text-[#A2191F] border border-[#A2191F]" title="Human Decision: Disqualified (Do Not Procure)">
+              Disqualified
+            </span>
+          );
+        }
+        if (status === 'UNDER_REVIEW') {
+          return (
+            <span className="text-[11px] font-semibold px-2 py-0.5 bg-[#FCF4D6] text-[#684E00] border border-[#684E00]" title="Human Decision: Under Review (Audit Required)">
+              Under Review
+            </span>
+          );
+        }
+        return (
+          <span className="text-[11px] font-semibold px-2 py-0.5 bg-[#DEFBE6] text-[#0E6027] border border-[#0E6027]" title="Human Decision: Approved (Active Supplier)">
+            Approved
+          </span>
+        );
+      },
+    },
+    {
       key: 'score',
       header: 'Risk Score',
       sortable: true,
