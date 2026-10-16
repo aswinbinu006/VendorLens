@@ -5,8 +5,25 @@ import { authService } from './modules/auth/auth.service.js';
 import { ingestionService } from './modules/ingestion/ingestion.service.js';
 import { initScheduler, stopScheduler } from './jobs/scheduler.js';
 
+import { execSync } from 'node:child_process';
+import { prisma } from './config/db.js';
+
 const server = app.listen(env.PORT, async () => {
   logger.info({ port: env.PORT, nodeEnv: env.NODE_ENV, trustProxy: env.TRUST_PROXY }, 'API server started successfully');
+  try {
+    logger.info('Ensuring database migrations are up to date...');
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    logger.info('Database migrations applied successfully');
+  } catch (migErr) {
+    logger.error({ migErr }, 'Failed running auto-migration on startup');
+  }
+
+  try {
+    await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
+  } catch {
+    // pg_trgm might already exist or require superuser depending on cloud host
+  }
+
   await authService.bootstrapAdmin();
   await ingestionService.cleanupStaleRuns();
   initScheduler();

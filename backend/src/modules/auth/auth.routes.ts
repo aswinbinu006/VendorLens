@@ -25,10 +25,11 @@ authRouter.post('/login', requireFetchHeader, loginLimiter, async (req, res, nex
     const { token, user } = await authService.login(email, password);
 
     // Set secure httpOnly cookie per Phase 1 & docs/10
+    const isProd = env.NODE_ENV === 'production';
     res.cookie(AUTH_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 8 * 3600 * 1000, // 8h
       path: '/',
     });
@@ -40,10 +41,11 @@ authRouter.post('/login', requireFetchHeader, loginLimiter, async (req, res, nex
 });
 
 authRouter.post('/logout', requireFetchHeader, (_req, res) => {
+  const isProd = env.NODE_ENV === 'production';
   res.clearCookie(AUTH_COOKIE_NAME, {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     path: '/',
   });
   res.status(200).json({ message: 'Logged out successfully' });

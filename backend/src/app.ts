@@ -78,7 +78,19 @@ export function createApp(customEnv?: Partial<EnvConfig>): Express {
   // Strict CORS Allowlist
   app.use(
     cors({
-      origin: config.CORS_ORIGIN,
+      origin: (requestOrigin, callback) => {
+        if (!requestOrigin) return callback(null, true);
+        if (
+          config.CORS_ORIGIN === '*' ||
+          requestOrigin === config.CORS_ORIGIN ||
+          requestOrigin === 'http://localhost:5173' ||
+          requestOrigin === 'https://vendor-lens-chi.vercel.app' ||
+          requestOrigin.endsWith('.vercel.app')
+        ) {
+          return callback(null, true);
+        }
+        return callback(null, false);
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-Id'],
