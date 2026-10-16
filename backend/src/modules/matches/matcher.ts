@@ -166,12 +166,7 @@ export function matchSignalToVendors(
       }
     }
 
-    // Candidate must meet threshold
-    if (bestScore < threshold) {
-      continue; // Discard
-    }
-
-    // Candidate additionally requires: same first significant token OR similarity >= 0.85
+    // Candidate additionally evaluates: trigram threshold OR shared brand token / distinct word
     const vendorFirstToken = getFirstSignificantToken(
       bestMatchedName === vendor.name
         ? vendor.normalizedName
@@ -179,9 +174,50 @@ export function matchSignalToVendors(
             vendor.normalizedName
     );
 
-    const sameFirstToken = firmFirstToken === vendorFirstToken;
-    const qualifies = sameFirstToken || bestScore >= 0.85;
+    const GENERIC_TOKENS = new Set([
+      'pharmaceutical',
+      'pharmaceuticals',
+      'laboratories',
+      'laboratory',
+      'pharma',
+      'health',
+      'healthcare',
+      'holdings',
+      'industries',
+      'group',
+      'corp',
+      'corporation',
+      'inc',
+      'ltd',
+      'limited',
+      'pvt',
+      'llc',
+      'company',
+      'co',
+      'therapeutics',
+      'sciences',
+      'biotech',
+    ]);
 
+    const isDistinctBrandToken = firmFirstToken.length >= 3 && !GENERIC_TOKENS.has(firmFirstToken);
+    const sameFirstToken = isDistinctBrandToken && firmFirstToken === vendorFirstToken;
+
+    // Check if vendor shares a distinct brand word with the recalling firm
+    const firmWords = new Set(
+      normalizedFirm.split(' ').filter((w) => w.length >= 3 && !GENERIC_TOKENS.has(w))
+    );
+    const vendorWords = new Set(
+      vendor.normalizedName.split(' ').filter((w) => w.length >= 3 && !GENERIC_TOKENS.has(w))
+    );
+    let sharedDistinctWord = false;
+    for (const w of vendorWords) {
+      if (firmWords.has(w)) {
+        sharedDistinctWord = true;
+        break;
+      }
+    }
+
+    const qualifies = bestScore >= threshold || sameFirstToken || sharedDistinctWord;
     if (!qualifies) {
       continue; // Discard
     }
@@ -191,11 +227,16 @@ export function matchSignalToVendors(
       !!vendor.country &&
       signal.country.trim().toLowerCase() === vendor.country.trim().toLowerCase();
 
+    // Ambiguous candidate match routed to human compliance queue
+    const calculatedScore = sameFirstToken || sharedDistinctWord
+      ? Math.max(bestScore, 0.72)
+      : bestScore;
+
     candidates.push({
       signalId: signal.id,
       vendorId: vendor.id,
       status: 'pending',
-      score: Math.round(bestScore * 10000) / 10000,
+      score: Math.round(calculatedScore * 10000) / 10000,
       countryMatch,
       matchedName: bestMatchedName,
     });

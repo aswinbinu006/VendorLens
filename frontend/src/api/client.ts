@@ -181,8 +181,30 @@ export const apiClient = {
   },
 
   // Matches
-  async getPendingMatches(params?: { page?: number; pageSize?: number }): Promise<PaginatedResponse<PendingMatchItem>> {
+  async getPendingMatches(params?: {
+    status?: 'pending' | 'auto' | 'confirmed' | 'all';
+    page?: number;
+    pageSize?: number;
+  }): Promise<PaginatedResponse<PendingMatchItem>> {
     return request<PaginatedResponse<PendingMatchItem>>('/matches/pending', { params });
+  },
+
+  async scanMatches(): Promise<{
+    success: boolean;
+    vendorsScanned: number;
+    signalsScanned: number;
+    matchesFound: number;
+    affectedVendors: number;
+  }> {
+    return request<{
+      success: boolean;
+      vendorsScanned: number;
+      signalsScanned: number;
+      matchesFound: number;
+      affectedVendors: number;
+    }>('/matches/scan', {
+      method: 'POST',
+    });
   },
 
   async confirmMatch(id: number): Promise<{ success: boolean; rescoreTriggered: boolean }> {

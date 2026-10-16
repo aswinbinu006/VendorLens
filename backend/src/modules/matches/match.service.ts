@@ -5,6 +5,7 @@ import { auditService } from '../audit/audit.service.js';
 import { matchSignalToVendors, type MatchableSignal, type MatchableVendor } from './matcher.js';
 
 export interface ListPendingMatchesParams {
+  status?: 'pending' | 'auto' | 'confirmed' | 'all';
   page?: number;
   pageSize?: number;
   sortBy?: 'similarityScore' | 'eventDate' | 'createdAt';
@@ -25,6 +26,37 @@ export interface MatchConfirmationResult {
 }
 
 export const matchService = {
+  /**
+   * Rescan all registered vendors against all stored signals
+   */
+  async scanAllMatches(): Promise<{
+    vendorsScanned: number;
+    signalsScanned: number;
+    matchesFound: number;
+    affectedVendors: number;
+  }> {
+    const [vendorsRaw, signalsRaw] = await Promise.all([
+      prisma.vendor.findMany({ include: { aliases: true } }),
+      prisma.signal.findMany({
+        where: { firmName: { not: null } },
+        select: { id: true, firmName: true, country: true },
+      }),
+    ]);
+
+    const affected = await this.matchSignals(signalsRaw);
+    if (affected.length > 0) {
+      await this.scoringHook(affected);
+    }
+
+    const totalMatches = await prisma.signalMatch.count();
+    return {
+      vendorsScanned: vendorsRaw.length,
+      signalsScanned: signalsRaw.length,
+      matchesFound: totalMatches,
+      affectedVendors: affected.length,
+    };
+  },
+
   /**
    * Hook for Phase 5 scoring. Default is an asynchronous no-op until Phase 5 registers its handler.
    */
@@ -172,9 +204,12 @@ export const matchService = {
     const pageSize = Math.min(100, Math.max(1, params.pageSize || 25));
     const skip = (page - 1) * pageSize;
 
-    const where: any = {
-      status: 'pending',
-    };
+    const where: any = {};
+    if (params.status && params.status !== 'all') {
+      where.status = params.status;
+    } else if (!params.status) {
+      where.status = 'pending';
+    }
 
     let orderBy: any = {
       score: 'desc',

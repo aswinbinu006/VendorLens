@@ -32,9 +32,10 @@ export const FuzzySettingsPage: React.FC = () => {
     );
   }
 
-  const stage1 = data.stage1 || { inputs: [], rules: [], output: { name: '', range: [0, 100], sets: [] } };
-  const stage2 = data.stage2 || { inputs: [], rules: [], output: { name: '', range: [0, 100], sets: [] } };
-  const thresholds = data.crispThresholds || { low: 25, medium: 50, high: 75, critical: 100 };
+  const rawConfig = (data as any)?.config || {};
+  const stage1 = data.stage1 || rawConfig.stage1 || { inputs: [], rules: [], output: { name: '', range: [0, 100], sets: [] } };
+  const stage2 = data.stage2 || rawConfig.stage2 || { inputs: [], rules: [], output: { name: '', range: [0, 100], sets: [] } };
+  const thresholds = data.crispThresholds || rawConfig.crispThresholds || { low: 25, medium: 50, high: 75, critical: 100 };
 
   return (
     <div className="space-y-6">

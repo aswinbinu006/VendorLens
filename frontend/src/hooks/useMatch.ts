@@ -12,16 +12,31 @@ import { apiClient } from '@/api/client';
 export function usePendingMatches(
   page = 1,
   pageSize = 20,
+  status: 'pending' | 'auto' | 'confirmed' | 'all' = 'pending'
 ) {
   return useQuery<
     PaginatedResponse<PendingMatchItem>,
     Error
   >({
-    queryKey: ['matches', 'pending', page, pageSize],
-    queryFn: () => apiClient.getPendingMatches({ page, pageSize }),
-    staleTime: 3 * 60 * 1000, // 3 minutes
+    queryKey: ['matches', status, page, pageSize],
+    queryFn: () => apiClient.getPendingMatches({ page, pageSize, status }),
+    staleTime: 30 * 1000,
     retry: 2,
     refetchOnWindowFocus: false,
+  });
+}
+
+export function useScanMatches() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiClient.scanMatches(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['vendors'] });
+    },
   });
 }
 

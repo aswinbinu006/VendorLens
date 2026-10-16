@@ -124,26 +124,26 @@ export const DEFAULT_FUZZY_CONFIG = {
 };
 
 export const fuzzyConfigService = {
-  async getConfig(): Promise<FuzzyConfigData> {
+  async getConfig(): Promise<any> {
     const active = await prisma.fuzzyConfig.findFirst({
       where: { isActive: true },
       orderBy: { version: 'desc' },
     });
-    if (active) {
-      return {
-        version: active.version,
-        config: active.config as Record<string, unknown>,
-        isActive: active.isActive,
-        createdBy: active.createdBy ? Number(active.createdBy) : null,
-        createdAt: active.createdAt.toISOString(),
-      };
-    }
+
+    const rawConfig = (active?.config as any) || DEFAULT_FUZZY_CONFIG;
+    const stage1 = rawConfig.stage1 || DEFAULT_FUZZY_CONFIG.stage1;
+    const stage2 = rawConfig.stage2 || DEFAULT_FUZZY_CONFIG.stage2;
+    const crispThresholds = rawConfig.crispThresholds || DEFAULT_FUZZY_CONFIG.crispThresholds;
+
     return {
-      version: 1,
-      config: DEFAULT_FUZZY_CONFIG as Record<string, unknown>,
-      isActive: true,
-      createdBy: null,
-      createdAt: new Date().toISOString(),
+      version: active ? active.version : 1,
+      isActive: active ? active.isActive : true,
+      stage1,
+      stage2,
+      crispThresholds,
+      config: rawConfig,
+      createdBy: active?.createdBy ? Number(active.createdBy) : null,
+      createdAt: active ? active.createdAt.toISOString() : new Date().toISOString(),
     };
   },
 

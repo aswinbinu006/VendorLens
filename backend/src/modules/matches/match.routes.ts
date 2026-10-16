@@ -15,6 +15,7 @@ matchRouter.use(authenticate);
 // Schema for pagination query parameters
 const listPendingMatchesQuerySchema = z
   .object({
+    status: z.enum(['pending', 'auto', 'confirmed', 'all']).optional(),
     page: z.coerce.number().int().min(1).default(1),
     pageSize: z.coerce.number().int().min(1).max(100).default(25),
     sortBy: z.enum(['similarityScore', 'eventDate', 'createdAt']).optional(),
@@ -22,12 +23,22 @@ const listPendingMatchesQuerySchema = z
   })
   .strict();
 
-// GET /api/v1/matches/pending - List pending matches with pagination
+// GET /api/v1/matches/pending - List matches with optional status filter
 matchRouter.get('/pending', async (req, res, next) => {
   try {
     const params = listPendingMatchesQuerySchema.parse(req.query);
     const result = await matchService.listPendingMatches(params);
     res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/matches/scan - Re-scan all registered vendors against all signals
+matchRouter.post('/scan', async (_req, res, next) => {
+  try {
+    const result = await matchService.scanAllMatches();
+    res.status(200).json({ success: true, ...result });
   } catch (err) {
     next(err);
   }

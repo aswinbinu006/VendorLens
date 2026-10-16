@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { usePendingMatches, useConfirmMatch, useRejectMatch } from '@/hooks/useMatch';
-import { LoadingState, ErrorState, EmptyState } from '@/components/common/States';
+import { usePendingMatches, useConfirmMatch, useRejectMatch, useScanMatches } from '@/hooks/useMatch';
+import { LoadingState, ErrorState } from '@/components/common/States';
 import {
   Check,
   X,
@@ -14,6 +14,10 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
+  Zap,
+  Sparkles,
+  Clock,
+  CheckCircle2,
 } from 'lucide-react';
 import type { PendingMatchItem } from '@/types/api';
 
@@ -28,10 +32,13 @@ interface VendorMatchGroup {
 export const MatchesPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const pageSize = 50; // Larger page size to cluster vendor groups cleanly
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'auto' | 'confirmed' | 'all'>('pending');
+  const [scanFeedback, setScanFeedback] = useState<string | null>(null);
 
-  const { data, isLoading, error, refetch, isFetching } = usePendingMatches(page, pageSize);
+  const { data, isLoading, error, refetch, isFetching } = usePendingMatches(page, pageSize, statusFilter);
   const confirmMatch = useConfirmMatch();
   const rejectMatch = useRejectMatch();
+  const scanMatches = useScanMatches();
 
   const [processingVendors, setProcessingVendors] = useState<Record<string, boolean>>({});
   const [expandedVendors, setExpandedVendors] = useState<Record<string, boolean>>({});
@@ -76,6 +83,19 @@ export const MatchesPage: React.FC = () => {
 
     return Array.from(map.values());
   }, [data?.data]);
+
+  const handleRunScan = async () => {
+    setScanFeedback(null);
+    try {
+      const res = await scanMatches.mutateAsync();
+      setScanFeedback(
+        `Surveillance scan complete: Evaluated ${res.vendorsScanned} suppliers against ${res.signalsScanned} signals. Found ${res.matchesFound} total matches!`
+      );
+      refetch();
+    } catch (err: any) {
+      alert(`Scan failed: ${err?.message || 'Error occurred during scan'}`);
+    }
+  };
 
   const handleConfirmSingle = async (id: number) => {
     try {
@@ -134,16 +154,45 @@ export const MatchesPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-300 rounded-xl bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
-          <span>Refresh Queue</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleRunScan}
+            disabled={scanMatches.isPending}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <Zap className={`w-3.5 h-3.5 ${scanMatches.isPending ? 'animate-spin' : ''}`} />
+            <span>{scanMatches.isPending ? 'Scanning Watchlist...' : 'Scan Watchlist Matches'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-300 rounded-xl bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
+
+      {/* Scan Feedback Banner */}
+      {scanFeedback && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs rounded-2xl flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>{scanFeedback}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setScanFeedback(null)}
+            className="text-emerald-700 hover:text-emerald-900 font-bold px-2 py-0.5 rounded cursor-pointer"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {/* Human Governance Policy Notice */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50/50 border border-blue-200 rounded-2xl p-4 sm:p-5 text-xs text-slate-800 flex items-start gap-3.5 shadow-xs">
@@ -155,6 +204,61 @@ export const MatchesPage: React.FC = () => {
           The surveillance engine computes trigram similarities and risk indices, but <strong>the AI will never automatically cancel, suspend, or disqualify a supplier</strong>.
           Authorized human compliance officers review these incidents, confirm true matches, and finalize whether your organization continues business with each vendor.
         </div>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 flex-wrap">
+        <button
+          type="button"
+          onClick={() => { setStatusFilter('pending'); setPage(1); }}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+            statusFilter === 'pending'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          <span>Pending Verification</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setStatusFilter('auto'); setPage(1); }}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+            statusFilter === 'auto'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+          <span>Auto-Confirmed by AI</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setStatusFilter('confirmed'); setPage(1); }}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+            statusFilter === 'confirmed'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Human Confirmed</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setStatusFilter('all'); setPage(1); }}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+            statusFilter === 'all'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>All Incident Matches</span>
+        </button>
       </div>
 
       {/* Queue Content */}
@@ -432,10 +536,34 @@ export const MatchesPage: React.FC = () => {
           })()}
         </div>
       ) : (
-        <EmptyState
-          title="Match review queue is clear"
-          description="There are currently no ambiguous supplier matches requiring human review. The surveillance pipeline is synchronized."
-        />
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center space-y-4 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto text-blue-600">
+            <Layers className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900">
+              {statusFilter === 'pending'
+                ? 'No Pending Ambiguous Matches'
+                : statusFilter === 'auto'
+                ? 'No Auto-Confirmed Matches'
+                : 'No Incident Matches Found'}
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+              {statusFilter === 'pending'
+                ? 'All exact supplier matches were either automatically confirmed by the AI engine or no unreviewed signals are pending.'
+                : 'Scan your registered suppliers against all synchronized openFDA drug enforcement recalls.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleRunScan}
+            disabled={scanMatches.isPending}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/20 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <Zap className={`w-4 h-4 ${scanMatches.isPending ? 'animate-spin' : ''}`} />
+            <span>{scanMatches.isPending ? 'Scanning Watchlist...' : 'Run Signal Match Scan'}</span>
+          </button>
+        </div>
       )}
     </div>
   );
