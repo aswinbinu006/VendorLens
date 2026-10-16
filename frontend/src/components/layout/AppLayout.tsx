@@ -46,6 +46,11 @@ export const AppLayout: React.FC<{
           path: '/companies',
           icon: <Building2 className="w-4 h-4" />,
         },
+        {
+          label: 'Compliance Audit Trail',
+          path: '/audit',
+          icon: <FileText className="w-4 h-4" />,
+        },
       ]
     : [
         {
@@ -76,11 +81,6 @@ export const AppLayout: React.FC<{
           icon: <RefreshCw className="w-4 h-4" />,
         },
         {
-          label: 'Audit Log',
-          path: '/audit',
-          icon: <FileText className="w-4 h-4" />,
-        },
-        {
           label: 'Fuzzy Engine Rules',
           path: '/settings/fuzzy',
           icon: <Sliders className="w-4 h-4" />,
@@ -101,7 +101,7 @@ export const AppLayout: React.FC<{
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          <Link to="/dashboard" className="flex items-center gap-2.5">
+          <Link to={isSuperAdmin ? '/companies' : '/dashboard'} className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-md shadow-blue-500/20 border border-blue-400/30">
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>

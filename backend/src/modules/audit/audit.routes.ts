@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { auditService } from './audit.service.js';
 import { authenticate } from '../auth/auth.middleware.js';
+import { env } from '../../config/env.js';
 
 export const auditRouter = Router();
 
@@ -22,11 +23,21 @@ const listAuditLogQuerySchema = z
 /**
  * GET /api/v1/audit-log
  * Filterable, paginated audit trail.
+ * Super-Admin (admin@example.com) has global access across all tenants.
+ * Regular company admins are strictly scoped to their own actor logs.
  */
 auditRouter.get('/', async (req, res, next) => {
   try {
     const query = listAuditLogQuerySchema.parse(req.query);
-    const result = await auditService.list(query);
+    const isSuperAdmin = req.user?.email?.toLowerCase() === env.ADMIN_EMAIL.toLowerCase();
+
+    // Restrict non-super-admins to only their own actor logs
+    const scopedUserId = isSuperAdmin ? query.userId : (req.user?.id ? Number(req.user.id) : undefined);
+
+    const result = await auditService.list({
+      ...query,
+      userId: scopedUserId,
+    });
     res.json(result);
   } catch (err) {
     next(err);

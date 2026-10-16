@@ -89,6 +89,14 @@ export const App: React.FC = () => {
                     </AdminOnlyRoute>
                   }
                 />
+                <Route
+                  path="/audit"
+                  element={
+                    <AdminOnlyRoute>
+                      <AuditLogPage />
+                    </AdminOnlyRoute>
+                  }
+                />
 
                 {/* Company Admin Operational Suite */}
                 <Route
@@ -136,14 +144,6 @@ export const App: React.FC = () => {
                   element={
                     <CompanyOnlyRoute>
                       <IngestionPage />
-                    </CompanyOnlyRoute>
-                  }
-                />
-                <Route
-                  path="/audit"
-                  element={
-                    <CompanyOnlyRoute>
-                      <AuditLogPage />
                     </CompanyOnlyRoute>
                   }
                 />
