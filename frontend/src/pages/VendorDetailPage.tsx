@@ -49,14 +49,11 @@ export const VendorDetailPage: React.FC = () => {
   const scoreValue = scoreDetail?.score ?? vendor.currentScore ?? 0;
   const scoreLevel: RiskLevel = (scoreDetail?.level ?? vendor.currentLevel ?? 'low') as RiskLevel;
 
-  // SVG Radial Gauge calculation
-  // Angle: -90 deg to +90 deg (half-circle gauge)
-  const radius = 80;
-  const stroke = 12;
-  const normalizedRadius = radius - stroke * 2;
-  const circumference = normalizedRadius * Math.PI; // Half-circle
+  // SVG Radial Gauge calculation (180 degree semi-circle arc)
+  const arcRadius = 70;
+  const arcLength = Math.PI * arcRadius; // ~219.91
   const clampedScore = Math.max(0, Math.min(100, scoreValue));
-  const strokeDashoffset = circumference - (clampedScore / 100) * circumference;
+  const strokeDashoffset = arcLength - (clampedScore / 100) * arcLength;
 
   const gaugeColors: Record<RiskLevel, string> = {
     low: '#10b981', // emerald-500
@@ -125,41 +122,39 @@ export const VendorDetailPage: React.FC = () => {
         </div>
 
         {/* Circular Risk Gauge */}
-        <div className="flex flex-col items-center justify-center bg-slate-50/70 border border-slate-200 p-4 rounded-xl min-w-[200px] flex-shrink-0">
-          <div className="relative w-44 h-24 flex items-end justify-center overflow-hidden">
-            <svg height="160" width="160" className="rotate-[180deg]">
-              <circle
+        <div className="flex flex-col items-center justify-center bg-slate-50/70 border border-slate-200 p-4 rounded-xl min-w-[210px] flex-shrink-0">
+          <div className="relative flex flex-col items-center justify-center">
+            <svg viewBox="0 0 180 110" className="w-44 h-[105px]">
+              {/* Background Track */}
+              <path
+                d="M 20 95 A 70 70 0 0 1 160 95"
+                fill="none"
                 stroke="#e2e8f0"
-                fill="transparent"
-                strokeWidth={stroke}
-                strokeDasharray={`${circumference} ${circumference}`}
-                style={{ strokeDashoffset: 0 }}
-                r={normalizedRadius}
-                cx="80"
-                cy="80"
-              />
-              <circle
-                stroke={currentGaugeColor}
-                fill="transparent"
-                strokeWidth={stroke}
-                strokeDasharray={`${circumference} ${circumference}`}
-                style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+                strokeWidth="12"
                 strokeLinecap="round"
-                r={normalizedRadius}
-                cx="80"
-                cy="80"
+              />
+              {/* Active Value Track */}
+              <path
+                d="M 20 95 A 70 70 0 0 1 160 95"
+                fill="none"
+                stroke={currentGaugeColor}
+                strokeWidth="12"
+                strokeLinecap="round"
+                strokeDasharray={arcLength}
+                strokeDashoffset={strokeDashoffset}
+                style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }}
               />
             </svg>
-            <div className="absolute bottom-0 text-center">
-              <span className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
+            <div className="absolute top-[38px] flex flex-col items-center justify-center text-center">
+              <span className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight leading-none">
                 {scoreValue.toFixed(1)}
               </span>
-              <span className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+              <span className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-1.5">
                 Overall Risk (0-100)
               </span>
             </div>
           </div>
-          <span className="text-xs font-bold uppercase mt-2" style={{ color: currentGaugeColor }}>
+          <span className="text-xs font-bold uppercase mt-1 tracking-wide" style={{ color: currentGaugeColor }}>
             {scoreLevel.toUpperCase()} RISK
           </span>
         </div>
