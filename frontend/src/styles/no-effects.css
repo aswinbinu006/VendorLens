@@ -1,8 +1,4 @@
-*, *::before, *::after {
-  animation: none !important;
-  transition: none !important;
-  scroll-behavior: auto !important;
-  box-shadow: none !important;
-  text-shadow: none !important;
-  backdrop-filter: none !important;
+/* Smooth interactive effects and premium transitions */
+html {
+  scroll-behavior: smooth;
 }

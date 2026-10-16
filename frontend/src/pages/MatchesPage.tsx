@@ -128,9 +128,9 @@ export const MatchesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-[#161616] tracking-tight">Signal Match Review Queue</h1>
-          <p className="text-xs text-[#525252] mt-0.5">
-            Human review queue: Incidents clubbed by supplier for faster verification and business continuity decisions.
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Signal Match Review Queue</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Human verification queue: Incidents clubbed by supplier for faster review and business continuity decisions.
           </p>
         </div>
 
@@ -138,18 +138,20 @@ export const MatchesPage: React.FC = () => {
           type="button"
           onClick={() => refetch()}
           disabled={isFetching}
-          className="inline-flex items-center gap-1.5 px-3 py-2 border border-[#E0E0E0] bg-[#FFFFFF] text-xs font-semibold text-[#161616] hover:bg-[#E8E8E8] disabled:opacity-50 cursor-pointer"
+          className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-300 rounded-xl bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Refresh queue
+          <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+          <span>Refresh Queue</span>
         </button>
       </div>
 
       {/* Human Governance Policy Notice */}
-      <div className="bg-[#EDF5FF] border border-[#0F62FE] p-4 text-xs text-[#161616] flex items-start gap-3">
-        <ShieldCheck className="w-4 h-4 text-[#0F62FE] flex-shrink-0 mt-0.5" />
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50/50 border border-blue-200 rounded-2xl p-4 sm:p-5 text-xs text-slate-800 flex items-start gap-3.5 shadow-xs">
+        <div className="w-8 h-8 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <ShieldCheck className="w-4 h-4 text-blue-600" />
+        </div>
         <div className="leading-relaxed">
-          <span className="font-semibold text-[#0F62FE]">Human Decision Authority (FDA 21 CFR Part 11): </span>
+          <span className="font-bold text-blue-900">Human Decision Authority (FDA 21 CFR Part 11): </span>
           The surveillance engine computes trigram similarities and risk indices, but <strong>the AI will never automatically cancel, suspend, or disqualify a supplier</strong>.
           Authorized human compliance officers review these incidents, confirm true matches, and finalize whether your organization continues business with each vendor.
         </div>
@@ -165,23 +167,24 @@ export const MatchesPage: React.FC = () => {
           onRetry={() => refetch()}
         />
       ) : vendorGroups.length > 0 ? (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-[#525252] pb-2 border-b border-[#E0E0E0] gap-2">
+        <div className="space-y-5">
+          {/* Controls Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 pb-2 border-b border-slate-200 gap-2">
             <span>
-              Showing <strong>{vendorGroups.length} suppliers</strong> with <strong>{data?.data.length || 0} total pending incidents</strong> (Page {page})
+              Showing <strong className="text-slate-900 font-semibold">{vendorGroups.length} suppliers</strong> with <strong className="text-slate-900 font-semibold">{data?.data.length || 0} total pending incidents</strong> (Page {page})
             </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={expandAll}
-                className="px-2.5 py-1 text-xs border border-[#E0E0E0] bg-[#FFFFFF] hover:bg-[#E8E8E8] text-[#161616] cursor-pointer"
+                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all cursor-pointer"
               >
                 Expand all
               </button>
               <button
                 type="button"
                 onClick={retractAll}
-                className="px-2.5 py-1 text-xs border border-[#E0E0E0] bg-[#FFFFFF] hover:bg-[#E8E8E8] text-[#161616] cursor-pointer"
+                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all cursor-pointer"
               >
                 Retract all
               </button>
@@ -189,7 +192,7 @@ export const MatchesPage: React.FC = () => {
           </div>
 
           {/* Grouped Vendor Cards */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {vendorGroups.map((group) => {
               const isGroupBusy = processingVendors[group.vendorName] || false;
               const isExpanded = expandedVendors[group.vendorName] ?? false;
@@ -197,37 +200,39 @@ export const MatchesPage: React.FC = () => {
               return (
                 <section
                   key={group.vendorName}
-                  className="bg-[#FFFFFF] border border-[#E0E0E0] overflow-hidden"
+                  className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden transition-all hover:border-slate-300"
                   aria-label={`Match review for ${group.vendorName}`}
                 >
                   {/* Supplier Clubbed Header - Clickable to Retract/Expand */}
                   <div
                     onClick={() => toggleVendorExpanded(group.vendorName)}
-                    className="bg-[#F4F4F4] border-b border-[#E0E0E0] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none hover:bg-[#EAEAEA]"
+                    className="bg-slate-50/80 border-b border-slate-200 p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none hover:bg-slate-100/70 transition-colors"
                   >
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Building2 className="w-4 h-4 text-[#161616]" />
-                        <span className="font-semibold text-sm text-[#161616]">{group.vendorName}</span>
-                        <span className="text-xs text-[#525252]">&rarr; Matched FDA Firm:</span>
-                        <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-[#FFFFFF] border border-[#E0E0E0] text-[#161616]">
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100/80 border border-blue-200 flex items-center justify-center flex-shrink-0">
+                          <Building2 className="w-4 h-4 text-blue-700" />
+                        </div>
+                        <span className="font-bold text-sm text-slate-900">{group.vendorName}</span>
+                        <span className="text-xs text-slate-500">&rarr; Matched FDA Firm:</span>
+                        <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-white border border-slate-300 text-slate-800 shadow-xs">
                           {group.firmName || 'Unknown FDA Firm'}
                         </span>
-                        <span className="text-xs font-mono font-semibold text-[#0F62FE] px-1.5 py-0.5 bg-[#EDF5FF] border border-[#0F62FE]">
+                        <span className="text-xs font-mono font-bold text-blue-700 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200">
                           {(group.similarityScore * 100).toFixed(1)}% match
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs text-[#525252] pt-0.5">
-                        <span className="inline-flex items-center gap-1 font-semibold text-[#161616]">
-                          <Layers className="w-3.5 h-3.5" />
+                      <div className="flex items-center gap-3 text-xs text-slate-500 pt-0.5">
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700">
+                          <Layers className="w-3.5 h-3.5 text-blue-600" />
                           {group.items.length} pending {group.items.length === 1 ? 'incident' : 'incidents'} for this supplier
                         </span>
                         <span>•</span>
                         <Link
                           to={`/vendors/${group.vendorId}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 text-[#0F62FE] hover:underline font-semibold"
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline font-semibold"
                         >
                           View supplier profile &amp; finalize business decision <ArrowRight className="w-3 h-3" />
                         </Link>
@@ -242,17 +247,17 @@ export const MatchesPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => toggleVendorExpanded(group.vendorName)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#FFFFFF] hover:bg-[#E8E8E8] text-[#161616] border border-[#E0E0E0] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-xs transition-all cursor-pointer"
                         title={isExpanded ? 'Retract incident list' : 'Expand incident list'}
                       >
                         {isExpanded ? (
                           <>
-                            <ChevronUp className="w-3.5 h-3.5 text-[#525252]" />
+                            <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
                             <span>Retract ({group.items.length})</span>
                           </>
                         ) : (
                           <>
-                            <ChevronDown className="w-3.5 h-3.5 text-[#525252]" />
+                            <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
                             <span>Expand ({group.items.length})</span>
                           </>
                         )}
@@ -262,22 +267,22 @@ export const MatchesPage: React.FC = () => {
                         type="button"
                         onClick={() => handleConfirmAllForVendor(group)}
                         disabled={isGroupBusy || confirmMatch.isPending}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#0E6027] hover:bg-[#094019] text-[#FFFFFF] border border-[#0E6027] disabled:opacity-50 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all disabled:opacity-50 cursor-pointer"
                         title={`Confirm all ${group.items.length} incidents as belonging to ${group.vendorName}`}
                       >
                         <Check className="w-3.5 h-3.5" />
-                        {isGroupBusy ? 'Processing...' : `Confirm all (${group.items.length})`}
+                        <span>{isGroupBusy ? 'Processing...' : `Confirm all (${group.items.length})`}</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleRejectAllForVendor(group)}
                         disabled={isGroupBusy || rejectMatch.isPending}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#FFFFFF] hover:bg-[#E8E8E8] text-[#A2191F] border border-[#A2191F] disabled:opacity-50 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
                         title={`Reject all ${group.items.length} incidents as unrelated`}
                       >
                         <X className="w-3.5 h-3.5" />
-                        {isGroupBusy ? 'Processing...' : `Reject all`}
+                        <span>{isGroupBusy ? 'Processing...' : `Reject all`}</span>
                       </button>
                     </div>
                   </div>
@@ -286,13 +291,13 @@ export const MatchesPage: React.FC = () => {
                   {!isExpanded && (
                     <div
                       onClick={() => toggleVendorExpanded(group.vendorName)}
-                      className="p-3 bg-[#FFFFFF] border-b border-[#E0E0E0] text-xs text-[#525252] flex items-center justify-between cursor-pointer hover:bg-[#F4F4F4]"
+                      className="p-3.5 bg-white text-xs text-slate-500 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
                     >
                       <span className="inline-flex items-center gap-2">
-                        <span className="font-semibold text-[#161616]">Retracted:</span>
+                        <span className="font-semibold text-slate-800">Retracted:</span>
                         <span>{group.items.length} pending incidents hidden for this supplier. Click header or Expand button to inspect.</span>
                       </span>
-                      <span className="text-[#0F62FE] font-semibold flex items-center gap-1">
+                      <span className="text-blue-600 font-semibold flex items-center gap-1">
                         Expand supplier incidents &rarr;
                       </span>
                     </div>
@@ -300,133 +305,136 @@ export const MatchesPage: React.FC = () => {
 
                   {/* List of Incidents under this Supplier (Conditionally rendered when expanded) */}
                   {isExpanded && (
-                    <div className="divide-y divide-[#E0E0E0]">
-                    {group.items.map((match, idx) => (
-                      <div
-                        key={match.id}
-                        className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-[#F4F4F4]"
-                      >
-                        {/* Incident Specifics */}
-                        <div className="space-y-1.5 flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[11px] font-mono px-1.5 py-0.5 bg-[#F4F4F4] border border-[#E0E0E0] text-[#525252]">
-                              #{idx + 1}
-                            </span>
-                            <span className="text-xs font-semibold text-[#161616]">
-                              {match.signalTitle || 'FDA Enforcement Notice'}
-                            </span>
-                            {match.severityRaw && (
-                              <span className={`text-[11px] font-semibold px-2 py-0.5 border ${
-                                match.severityRaw.includes('I') && !match.severityRaw.includes('II') && !match.severityRaw.includes('III')
-                                  ? 'bg-[#FFD7D9] text-[#A2191F] border-[#A2191F]'
-                                  : match.severityRaw.includes('II')
-                                  ? 'bg-[#FFD9BE] text-[#8A3800] border-[#8A3800]'
-                                  : 'bg-[#FCF4D6] text-[#684E00] border-[#684E00]'
-                              }`}>
-                                {match.severityRaw}
+                    <div className="divide-y divide-slate-100 bg-white">
+                      {group.items.map((match, idx) => (
+                        <div
+                          key={match.id}
+                          className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors"
+                        >
+                          {/* Incident Specifics */}
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                                #{idx + 1}
                               </span>
+                              <span className="text-xs font-bold text-slate-900">
+                                {match.signalTitle || 'FDA Enforcement Notice'}
+                              </span>
+                              {match.severityRaw && (
+                                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                                  match.severityRaw.includes('I') && !match.severityRaw.includes('II') && !match.severityRaw.includes('III')
+                                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                    : match.severityRaw.includes('II')
+                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                }`}>
+                                  {match.severityRaw}
+                                </span>
+                              )}
+                            </div>
+
+                            {match.signalSummary && (
+                              <p className="text-xs text-slate-600 leading-relaxed max-w-4xl">
+                                {match.signalSummary}
+                              </p>
                             )}
+
+                            <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pt-0.5">
+                              {match.eventDate && (
+                                <span className="inline-flex items-center gap-1 font-mono">
+                                  <Calendar className="w-3 h-3 text-slate-400" />
+                                  Initiated: {new Date(match.eventDate).toLocaleDateString()}
+                                </span>
+                              )}
+
+                              {match.url && (
+                                <>
+                                  <span>•</span>
+                                  <a
+                                    href={match.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                                  >
+                                    Raw FDA record ({(() => {
+                                      try {
+                                        return new URL(match.url).hostname;
+                                      } catch {
+                                        return 'api.fda.gov';
+                                      }
+                                    })()}) <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </>
+                              )}
+                            </div>
                           </div>
 
-                          {match.signalSummary && (
-                            <p className="text-xs text-[#525252] leading-relaxed">
-                              {match.signalSummary}
-                            </p>
-                          )}
-
-                          <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#525252] pt-0.5">
-                            {match.eventDate && (
-                              <span className="inline-flex items-center gap-1 font-mono">
-                                <Calendar className="w-3 h-3 text-[#525252]" />
-                                Initiated: {new Date(match.eventDate).toLocaleDateString()}
-                              </span>
-                            )}
-
-                            {match.url && (
-                              <>
-                                <span>•</span>
-                                <a
-                                  href={match.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-[#0F62FE] hover:underline font-semibold"
-                                >
-                                  Raw FDA record ({(() => {
-                                    try {
-                                      return new URL(match.url).hostname;
-                                    } catch {
-                                      return 'api.fda.gov';
-                                    }
-                                  })()}) <ExternalLink className="w-3 h-3" />
-                                </a>
-                              </>
-                            )}
+                          {/* Individual Incident Actions */}
+                          <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center">
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmSingle(match.id)}
+                              disabled={confirmMatch.isPending}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Confirm match</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRejectSingle(match.id)}
+                              disabled={rejectMatch.isPending}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-slate-600 border border-slate-300 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors disabled:opacity-50 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Reject</span>
+                            </button>
                           </div>
                         </div>
-
-                        {/* Individual Incident Confirm / Reject Buttons */}
-                        <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center">
-                          <button
-                            type="button"
-                            onClick={() => handleConfirmSingle(match.id)}
-                            disabled={confirmMatch.isPending}
-                            className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-[#DEFBE6] hover:bg-[#c2f2ce] text-[#0E6027] border border-[#0E6027] disabled:opacity-50 cursor-pointer"
-                            title="Confirm this single incident"
-                          >
-                            <Check className="w-3 h-3" />
-                            Confirm match
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRejectSingle(match.id)}
-                            disabled={rejectMatch.isPending}
-                            className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-[#FFFFFF] hover:bg-[#E8E8E8] text-[#525252] border border-[#E0E0E0] disabled:opacity-50 cursor-pointer"
-                            title="Reject this single incident"
-                          >
-                            <X className="w-3 h-3 text-[#A2191F]" />
-                            Reject
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
+                      ))}
+                    </div>
+                  )}
+                </section>
               );
             })}
           </div>
 
           {/* Pagination Controls */}
-          {data && data.total > pageSize && (
-            <div className="flex justify-between items-center pt-2 border-t border-[#E0E0E0]">
-              <span className="text-xs text-[#525252]">
-                Showing {data.data.length} of {data.total} pending candidates
-              </span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="px-3 py-1 text-xs border border-[#E0E0E0] bg-[#FFFFFF] hover:bg-[#E8E8E8] disabled:opacity-50 cursor-pointer"
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  disabled={page * pageSize >= data.total}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="px-3 py-1 text-xs border border-[#E0E0E0] bg-[#FFFFFF] hover:bg-[#E8E8E8] disabled:opacity-50 cursor-pointer"
-                >
-                  Next
-                </button>
+          {(() => {
+            const totalPages = Math.ceil((data?.total || 0) / pageSize);
+            if (totalPages <= 1) return null;
+            return (
+              <div className="flex items-center justify-between border-t border-slate-200 pt-4 text-xs text-slate-600">
+                <div>
+                  Page <span className="font-semibold text-slate-900">{page}</span> of{' '}
+                  <span className="font-semibold text-slate-900">{totalPages}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white disabled:opacity-40 hover:bg-slate-50 font-medium transition-colors cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                    className="px-3 py-1.5 border border-slate-300 rounded-lg bg-white disabled:opacity-40 hover:bg-slate-50 font-medium transition-colors cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       ) : (
         <EmptyState
-          title="Review Queue Clear"
-          description="There are currently zero pending signal matches requiring human verification."
+          title="Match review queue is clear"
+          description="There are currently no ambiguous supplier matches requiring human review. The surveillance pipeline is synchronized."
         />
       )}
     </div>
