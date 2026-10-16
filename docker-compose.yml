@@ -19,8 +19,8 @@ services:
 
   api:
     build:
-      context: .
-      dockerfile: apps/api/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: vrm_api
     restart: unless-stopped
     depends_on:
@@ -35,8 +35,8 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: apps/web/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: vrm_web
     restart: unless-stopped
     depends_on:
