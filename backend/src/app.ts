@@ -106,7 +106,19 @@ export function createApp(customEnv?: Partial<EnvConfig>): Express {
   // Global rate limiter
   app.use(globalLimiter);
 
-  // Health and Readiness probes (no auth needed)
+  // Root & Health handlers for UptimeRobot, Render, and monitoring probes
+  const rootHandler = (_req: any, res: any) => {
+    res.status(200).json({
+      service: 'VendorRisk Regulatory Surveillance API',
+      status: 'operational',
+      uptime: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+    });
+  };
+
+  app.get('/', rootHandler);
+  app.head('/', (_req: any, res: any) => res.status(200).end());
+
   const healthHandler = (_req: any, res: any) => {
     res.status(200).json({ status: 'ok', uptime: process.uptime() });
   };
