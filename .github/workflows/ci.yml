@@ -1,0 +1,92 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  security-audit:
+    name: Secret & Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Scan for Leaked Secrets
+        run: node backend/scripts/secret-scan.js
+
+  backend-test:
+    name: Backend Tests & Database Migrations
+    runs-on: ubuntu-latest
+    needs: security-audit
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vrm_app
+          POSTGRES_PASSWORD: vrm_secure_password
+          POSTGRES_DB: vrm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Run Database Migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://vrm_app:vrm_secure_password@localhost:5432/vrm
+        run: npx prisma migrate deploy
+
+      - name: Run Backend Vitest Test Suite
+        env:
+          DATABASE_URL: postgresql://vrm_app:vrm_secure_password@localhost:5432/vrm
+          JWT_SECRET: super_secret_jwt_key_at_least_32_characters_long_12345
+          NODE_ENV: test
+        run: npm run test:backend
+
+  frontend-build:
+    name: Frontend Build & Typecheck
+    runs-on: ubuntu-latest
+    needs: security-audit
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Frontend Application
+        run: npm run build:frontend
