@@ -80,26 +80,7 @@ interface AccessRequest {
   status: 'PENDING' | 'PROVISIONED';
 }
 
-const accessRequests: AccessRequest[] = [
-  {
-    id: 'req-1',
-    companyName: 'Bharat Biotech QA Unit',
-    contactName: 'Dr. Krishna Mohan',
-    email: 'k.mohan@bharatbiotech.com',
-    notes: 'Monitoring 45 API suppliers for vaccine raw materials, US FDA focus',
-    createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-    status: 'PENDING',
-  },
-  {
-    id: 'req-2',
-    companyName: "Dr. Reddy's Global SCM",
-    contactName: 'Sneha Patel',
-    email: 'sneha.patel@drreddys-corp.com',
-    notes: 'Sterile injectable supplier regulatory compliance verification',
-    createdAt: new Date(Date.now() - 3600000 * 18).toISOString(),
-    status: 'PENDING',
-  },
-];
+const accessRequests: AccessRequest[] = [];
 
 // GET /auth/access-requests - Super-Admin inspects pending onboarding requests
 authRouter.get('/access-requests', authenticate, async (_req, res, next) => {
