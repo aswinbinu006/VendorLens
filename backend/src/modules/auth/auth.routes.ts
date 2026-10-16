@@ -100,7 +100,7 @@ const accessRequests: AccessRequest[] = [
 ];
 
 // GET /auth/access-requests - Super-Admin inspects pending onboarding requests
-authRouter.get('/access-requests', authenticate, async (req, res, next) => {
+authRouter.get('/access-requests', authenticate, async (_req, res, next) => {
   try {
     res.status(200).json({ data: accessRequests });
   } catch (err) {
