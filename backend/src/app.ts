@@ -15,6 +15,7 @@ import { ingestionRouter, ingestionRunsRouter, ingestionService } from './module
 import { scoringRouter, scoringService } from './modules/scoring/index.js';
 import { fuzzyConfigRouter } from './modules/fuzzy-config/index.js';
 import { auditRouter } from './modules/audit/index.js';
+import { signalsRouter } from './modules/signals/signals.routes.js';
 import { prisma } from './config/db.js';
 
 // Wire Phase 4 matchService scoring hook to Phase 5 scoringService
@@ -142,6 +143,7 @@ export function createApp(customEnv?: Partial<EnvConfig>): Express {
   app.use('/api/v1/scoring', scoringRouter);
   app.use('/api/v1/fuzzy-config', fuzzyConfigRouter);
   app.use('/api/v1/audit-log', auditRouter);
+  app.use('/api/v1/signals', signalsRouter);
   // Also mount top-level aliases per specs
   app.use('/alerts', alertRouter);
   app.use('/ingest', ingestionRouter);
@@ -149,6 +151,7 @@ export function createApp(customEnv?: Partial<EnvConfig>): Express {
   app.use('/scoring', scoringRouter);
   app.use('/fuzzy-config', fuzzyConfigRouter);
   app.use('/audit-log', auditRouter);
+  app.use('/signals', signalsRouter);
 
   // 404 handler
   app.use(notFoundHandler);

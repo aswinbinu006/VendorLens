@@ -28,13 +28,15 @@ const queryClient = new QueryClient({
   },
 });
 
+import { isSuperAdminUser } from '@/utils/auth';
+
 /**
  * Super-Admin Guard:
- * Super-Admin is restricted to the Platform Administration Console (/companies).
+ * Super-Admin is restricted to the Platform Administration Console (/companies, /audit).
  */
 const AdminOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  if (user?.email?.toLowerCase() !== 'admin@example.com') {
+  if (!isSuperAdminUser(user)) {
     return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
@@ -46,7 +48,7 @@ const AdminOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
  */
 const CompanyOnlyRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  if (user?.email?.toLowerCase() === 'admin@example.com') {
+  if (isSuperAdminUser(user)) {
     return <Navigate to="/companies" replace />;
   }
   return <>{children}</>;

@@ -18,7 +18,8 @@ export type RunStatus = 'running' | 'success' | 'partial' | 'failed';
 export interface User {
   id: number;
   email: string;
-  createdAt: string;
+  createdAt?: string;
+  isSuperAdmin?: boolean;
 }
 
 export interface PaginatedResponse<T> {

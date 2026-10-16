@@ -82,7 +82,33 @@ export function loadEnv(override?: Record<string, string | undefined>): EnvConfi
     console.error('Invalid environment configuration:', parsed.error.format());
     throw new Error('Environment configuration validation failed');
   }
-  return parsed.data;
+
+  const data = parsed.data;
+
+  // Strict production safeguards: refuse startup with insecure default secrets
+  if (data.NODE_ENV === 'production') {
+    const defaultJwt = 'super_secret_jwt_key_at_least_32_characters_long_12345';
+    const defaultPass = 'AdminStrongPass!2026';
+    const issues: string[] = [];
+
+    if (!source.JWT_SECRET || data.JWT_SECRET === defaultJwt) {
+      issues.push('JWT_SECRET must be explicitly set to a unique production secret');
+    }
+    if (!source.ADMIN_PASSWORD || data.ADMIN_PASSWORD === defaultPass) {
+      issues.push('ADMIN_PASSWORD must be explicitly set to a secure production password');
+    }
+    if (!source.DATABASE_URL || data.DATABASE_URL.includes('localhost:5432/vrm')) {
+      issues.push('DATABASE_URL must be explicitly configured with production database credentials');
+    }
+
+    if (issues.length > 0) {
+      const msg = `FATAL: Refusing to start in production with insecure defaults:\n - ${issues.join('\n - ')}`;
+      console.error(msg);
+      throw new Error(`Production startup aborted: ${issues.join('; ')}`);
+    }
+  }
+
+  return data;
 }
 
 export const env = loadEnv();

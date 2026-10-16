@@ -16,6 +16,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
+import { isSuperAdminUser } from '@/utils/auth';
+
 import { useDashboardSummary } from '@/hooks/useDashboard';
 
 interface NavItem {
@@ -37,7 +39,7 @@ export const AppLayout: React.FC<{
   const effectivePendingMatches = pendingMatchesCount ?? dashboardData?.pendingMatches ?? 0;
   const effectiveNewAlerts = newAlertsCount ?? dashboardData?.newAlerts ?? 0;
 
-  const isSuperAdmin = user?.email?.toLowerCase() === 'admin@example.com';
+  const isSuperAdmin = isSuperAdminUser(user);
 
   const navItems: NavItem[] = isSuperAdmin
     ? [

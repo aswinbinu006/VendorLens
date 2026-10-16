@@ -1,57 +1,87 @@
+import { prisma } from '../../config/db.js';
 import type { SignalItem } from '../../types/index.js';
 
-const mockSignals: SignalItem[] = [
-  {
-    id: 1,
-    type: 'recall',
-    trust: 'official',
-    title: 'Recall signal',
-    summary: 'Summary of recall signal',
-    severityRaw: '5.2',
-    severityNum: 5,
-    eventDate: '2024-09-01',
-    url: 'https://example.com/signal1',
-    sourceDomain: 'example.com',
-    matchStatus: 'auto',
-    firmName: 'Acme Corp',
-  },
-  {
-    id: 2,
-    type: 'news',
-    trust: 'unverified',
-    title: 'News signal',
-    summary: 'Summary of news signal',
-    severityRaw: '3.1',
-    severityNum: 3,
-    eventDate: '2024-09-02',
-    url: 'https://example.com/signal2',
-    sourceDomain: 'example.com',
-    matchStatus: 'pending',
-    firmName: null,
-  },
-];
+export interface SignalFilters {
+  type?: 'recall' | 'news';
+  eventDate?: string;
+}
 
-export function getAllSignals(
-  filters?: Partial<Record<string, any>>,
+export async function getAllSignals(
+  filters?: SignalFilters,
   page = 1,
   pageSize = 10
-): SignalItem[] {
-  let results = [...mockSignals];
+): Promise<{ data: SignalItem[]; total: number; page: number; pageSize: number }> {
+  const skip = (page - 1) * pageSize;
+  const where: any = {};
 
   if (filters?.type) {
-    results = results.filter((s) => s.type === filters.type);
+    where.signalType = filters.type;
   }
 
   if (filters?.eventDate) {
-    results = results.filter(
-      (s) => s.eventDate === filters.eventDate
-    );
+    const d = new Date(filters.eventDate);
+    if (!isNaN(d.getTime())) {
+      const nextDay = new Date(d);
+      nextDay.setDate(nextDay.getDate() + 1);
+      where.eventDate = {
+        gte: d,
+        lt: nextDay,
+      };
+    }
   }
 
-  const start = (page - 1) * pageSize;
-  return results.slice(start, start + pageSize);
+  const [signals, total] = await Promise.all([
+    prisma.signal.findMany({
+      where,
+      orderBy: { eventDate: 'desc' },
+      skip,
+      take: pageSize,
+    }),
+    prisma.signal.count({ where }),
+  ]);
+
+  const items: SignalItem[] = signals.map((s) => ({
+    id: Number(s.id),
+    type: s.signalType as 'recall' | 'news',
+    trust: s.trust as 'official' | 'unverified',
+    title: s.title || `${s.signalType.toUpperCase()} - ${s.sourceId}`,
+    summary: s.summary || '',
+    severityRaw: s.severityRaw || null,
+    severityNum: s.severityNum || null,
+    eventDate: s.eventDate ? s.eventDate.toISOString().slice(0, 10) : null,
+    url: s.url || null,
+    sourceDomain: s.sourceDomain || null,
+    firmName: s.firmName || null,
+    matchStatus: 'pending',
+  }));
+
+  return {
+    data: items,
+    total,
+    page,
+    pageSize,
+  };
 }
 
-export function getSignalById(id: number): SignalItem | null {
-  return mockSignals.find((s) => s.id === id) || null;
+export async function getSignalById(id: number): Promise<SignalItem | null> {
+  const s = await prisma.signal.findUnique({
+    where: { id: BigInt(id) },
+  });
+
+  if (!s) return null;
+
+  return {
+    id: Number(s.id),
+    type: s.signalType as 'recall' | 'news',
+    trust: s.trust as 'official' | 'unverified',
+    title: s.title || `${s.signalType.toUpperCase()} - ${s.sourceId}`,
+    summary: s.summary || '',
+    severityRaw: s.severityRaw || null,
+    severityNum: s.severityNum || null,
+    eventDate: s.eventDate ? s.eventDate.toISOString().slice(0, 10) : null,
+    url: s.url || null,
+    sourceDomain: s.sourceDomain || null,
+    firmName: s.firmName || null,
+    matchStatus: 'pending',
+  };
 }

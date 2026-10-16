@@ -140,7 +140,7 @@ Test Files  4 passed (4)
 - `apps/api/src/modules/scoring/scoring.service.ts`: End-to-end scoring pipeline including:
   - Feature extraction adhering to E13 (distinct `event_id` count for recalls), E15 (`report_date` for recency decay), and E16 (news signal = 0.0 with news disabled).
   - Rescore triggers on match confirm/reject and post-ingestion.
-  - Risk level assignment (`low` [0..30], `medium` (30..70], `high` (70..100]).
+  - Risk level assignment (`low` [0..25), `medium` [25..50), `high` [50..75), `critical` [75..100]).
   - Score history change tracking in `risk_scores`.
 - `apps/api/src/modules/scoring/scoring.routes.ts`: Added `POST /api/v1/scoring/run` endpoint for manual/bulk rescoring.
 - `apps/api/src/app.ts`: Registered `/api/v1/scoring` routes.
@@ -200,7 +200,7 @@ Test Files  4 passed (4)
    - Consequent Medium is symmetric triangular `tri(20, 40, 60)` clipped at 1.0.
    - Centroid $x^* = 40.00$.
    - **Overall Composite Risk Score = 40.00**.
-   - Risk Level = **`medium`** (30 < 40 $\le$ 70).
+   - Risk Level = **`medium`** (25 $\le$ 40 < 50).
 
 ### 3. Test Suite Results
 ```text

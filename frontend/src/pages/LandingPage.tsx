@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { isSuperAdminUser } from '@/utils/auth';
 import { apiClient } from '@/api/client';
 import {
   ShieldCheck,
@@ -107,10 +108,10 @@ export const LandingPage: React.FC = () => {
 
             {isAuthenticated ? (
               <Link
-                to={user?.email?.toLowerCase() === 'admin@example.com' ? '/companies' : '/dashboard'}
+                to={isSuperAdminUser(user) ? '/companies' : '/dashboard'}
                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-lg shadow-md shadow-blue-600/20 transition-all flex items-center gap-1.5"
               >
-                <span>{user?.email?.toLowerCase() === 'admin@example.com' ? 'Super-Admin Console' : 'Dashboard'}</span>
+                <span>{isSuperAdminUser(user) ? 'Super-Admin Console' : 'Dashboard'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             ) : (
@@ -152,11 +153,11 @@ export const LandingPage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             {isAuthenticated ? (
               <Link
-                to={user?.email?.toLowerCase() === 'admin@example.com' ? '/companies' : '/dashboard'}
+                to={isSuperAdminUser(user) ? '/companies' : '/dashboard'}
                 className="px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02] flex items-center gap-2"
               >
                 <Lock className="w-4 h-4" />
-                <span>{user?.email?.toLowerCase() === 'admin@example.com' ? 'Enter Super-Admin Console' : 'Enter Compliance Dashboard'}</span>
+                <span>{isSuperAdminUser(user) ? 'Enter Super-Admin Console' : 'Enter Compliance Dashboard'}</span>
               </Link>
             ) : (
               <Link

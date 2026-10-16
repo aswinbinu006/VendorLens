@@ -34,7 +34,13 @@ authRouter.post('/login', requireFetchHeader, loginLimiter, async (req, res, nex
       path: '/',
     });
 
-    res.status(200).json({ user });
+    const isSuperAdmin = user.email.toLowerCase() === env.ADMIN_EMAIL.toLowerCase();
+    res.status(200).json({
+      user: {
+        ...user,
+        isSuperAdmin,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -52,17 +58,23 @@ authRouter.post('/logout', requireFetchHeader, (_req, res) => {
 });
 
 authRouter.get('/me', authenticate, (req, res) => {
+  const isSuperAdmin = req.user!.email.toLowerCase() === env.ADMIN_EMAIL.toLowerCase();
   res.status(200).json({
     user: {
       id: Number(req.user!.id),
       email: req.user!.email,
+      isSuperAdmin,
     },
   });
 });
 
 // GET /auth/users - List provisioned companies / users (Super-Admin only)
-authRouter.get('/users', authenticate, async (_req, res, next) => {
+authRouter.get('/users', authenticate, async (req, res, next) => {
   try {
+    if (req.user?.email.toLowerCase() !== env.ADMIN_EMAIL.toLowerCase()) {
+      res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Super-Admin access required' } });
+      return;
+    }
     const users = await authService.listUsers();
     res.status(200).json({ data: users });
   } catch (err) {

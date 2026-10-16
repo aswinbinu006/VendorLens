@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { isSuperAdminUser } from '@/utils/auth';
 import { apiClient } from '@/api/client';
 import {
   ShieldCheck,
@@ -41,7 +42,7 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(email.trim(), password);
-      const isSuper = email.trim().toLowerCase() === 'admin@example.com';
+      const isSuper = isSuperAdminUser({ email: email.trim() });
       const destination = searchParams.get('redirect') || (isSuper ? '/companies' : '/dashboard');
       navigate(destination, { replace: true });
     } catch (err: any) {

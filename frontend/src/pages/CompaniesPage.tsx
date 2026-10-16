@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/api/client';
+import { isSuperAdminUser } from '@/utils/auth';
 import { LoadingState, ErrorState, EmptyState } from '@/components/common/States';
 import {
   Building2,
@@ -245,7 +246,7 @@ export const CompaniesPage: React.FC = () => {
                           <Building2 className="w-4 h-4 text-blue-600" />
                         </div>
                         <span className="text-sm font-bold text-slate-900 font-mono">{u.email}</span>
-                        {u.email === 'admin@example.com' ? (
+                        {isSuperAdminUser({ email: u.email }) ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
                             Master Super-Admin
                           </span>
