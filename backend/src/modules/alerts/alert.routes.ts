@@ -55,7 +55,7 @@ alertsRouter.get('/', async (req, res, next) => {
       vendorId: query.vendorId,
       from: query.from,
       to: query.to,
-    });
+    }, req.user?.id);
     res.json(result);
   } catch (err) {
     next(err);

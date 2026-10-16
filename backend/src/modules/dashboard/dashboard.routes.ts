@@ -27,7 +27,7 @@ dashboardRouter.get('/summary', async (req, res, next) => {
     const params = summaryQuerySchema.parse(req.query);
 
     // Get dashboard summary
-    const summary = await dashboardService.getSummary(params);
+    const summary = await dashboardService.getSummary(params, req.user?.id);
 
     res.status(200).json(summary);
   } catch (err) {

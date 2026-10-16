@@ -72,6 +72,7 @@ model User {
   passwordHash String   @map("password_hash")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
 
+  vendors        Vendor[]
   decidedMatches SignalMatch[]
   reviewedAlerts Alert[]
   createdConfigs FuzzyConfig[]
@@ -82,8 +83,9 @@ model User {
 
 model Vendor {
   id             BigInt     @id @default(autoincrement())
+  userId         BigInt?    @map("user_id")
   name           String
-  normalizedName String     @unique @map("normalized_name")
+  normalizedName String     @map("normalized_name")
   country        String?
   category       String?
   criticality    Int        @default(3) @db.SmallInt
@@ -93,11 +95,14 @@ model Vendor {
   scoredAt       DateTime?  @map("scored_at") @db.Timestamptz
   createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz
 
+  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   aliases    VendorAlias[]
   matches    SignalMatch[]
   riskScores RiskScore[]
   alerts     Alert[]
 
+  @@unique([userId, normalizedName], map: "vendors_user_normalized_name")
+  @@index([userId], map: "vendors_user_id")
   @@index([currentLevel, currentScore(sort: Desc)], map: "vendors_level_score")
   @@map("vendors")
 }

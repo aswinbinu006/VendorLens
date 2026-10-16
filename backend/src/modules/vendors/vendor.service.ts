@@ -52,7 +52,8 @@ export const vendorService = {
     tx: any,
     normalizedName: string,
     aliases: string[] = [],
-    excludeVendorId?: bigint
+    excludeVendorId?: bigint,
+    userId?: bigint
   ): Promise<{ normalizedAliases: Array<{ alias: string; normalizedAlias: string }> }> {
     const normalizedAliasMap = new Map<string, string>();
 
@@ -78,10 +79,11 @@ export const vendorService = {
 
     const normAliasList = Array.from(normalizedAliasMap.keys());
 
-    // 2. Check if normalized name collides with another vendor
+    // 2. Check if normalized name collides with another vendor for this user
     const existingVendorByName = await tx.vendor.findFirst({
       where: {
         normalizedName,
+        ...(userId ? { userId } : {}),
         ...(excludeVendorId ? { id: { not: excludeVendorId } } : {}),
       },
     });
@@ -93,10 +95,11 @@ export const vendorService = {
       );
     }
 
-    // 3. Check if normalized name collides with an existing alias
+    // 3. Check if normalized name collides with an existing alias for this user
     const existingAliasForName = await tx.vendorAlias.findFirst({
       where: {
         normalizedAlias: normalizedName,
+        ...(userId ? { vendor: { userId } } : {}),
         ...(excludeVendorId ? { vendorId: { not: excludeVendorId } } : {}),
       },
     });
@@ -108,11 +111,12 @@ export const vendorService = {
       );
     }
 
-    // 4. Check each alias against existing vendor names and aliases
+    // 4. Check each alias against existing vendor names and aliases for this user
     if (normAliasList.length > 0) {
       const collidingVendor = await tx.vendor.findFirst({
         where: {
           normalizedName: { in: normAliasList },
+          ...(userId ? { userId } : {}),
           ...(excludeVendorId ? { id: { not: excludeVendorId } } : {}),
         },
       });
@@ -127,6 +131,7 @@ export const vendorService = {
       const collidingAlias = await tx.vendorAlias.findFirst({
         where: {
           normalizedAlias: { in: normAliasList },
+          ...(userId ? { vendor: { userId } } : {}),
           ...(excludeVendorId ? { vendorId: { not: excludeVendorId } } : {}),
         },
       });
@@ -147,12 +152,15 @@ export const vendorService = {
     return { normalizedAliases: formattedAliases };
   },
 
-  async listVendors(params: ListVendorsParams) {
+  async listVendors(params: ListVendorsParams, userId?: bigint) {
     const page = Math.max(1, params.page || 1);
     const pageSize = Math.min(100, Math.max(1, params.pageSize || 25));
     const skip = (page - 1) * pageSize;
 
     const where: any = {};
+    if (userId) {
+      where.userId = userId;
+    }
     if (params.level) {
       where.currentLevel = params.level;
     }
@@ -219,9 +227,13 @@ export const vendorService = {
     };
   },
 
-  async getVendorById(id: bigint) {
-    const vendor = await prisma.vendor.findUnique({
-      where: { id },
+  async getVendorById(id: bigint, userId?: bigint) {
+    const where: any = { id };
+    if (userId) {
+      where.userId = userId;
+    }
+    const vendor = await prisma.vendor.findFirst({
+      where,
       include: {
         aliases: {
           select: { id: true, alias: true, normalizedAlias: true },
@@ -259,11 +271,14 @@ export const vendorService = {
       const { normalizedAliases } = await this.checkCollisions(
         tx,
         normalizedName,
-        dto.aliases || []
+        dto.aliases || [],
+        undefined,
+        userId
       );
 
       const created = await tx.vendor.create({
         data: {
+          userId,
           name: dto.name.trim(),
           normalizedName,
           country: dto.country ? dto.country.trim() : null,
@@ -326,8 +341,8 @@ export const vendorService = {
     const changedFields: string[] = [];
 
     const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.vendor.findUnique({
-        where: { id },
+      const existing = await tx.vendor.findFirst({
+        where: { id, ...(userId ? { userId } : {}) },
         include: { aliases: true },
       });
       if (!existing) {
@@ -353,7 +368,8 @@ export const vendorService = {
           tx,
           newNormalizedName,
           aliasListToCheck,
-          id
+          id,
+          userId
         );
         normalizedAliasesToCreate = collisionResult.normalizedAliases;
       }
@@ -432,8 +448,8 @@ export const vendorService = {
   },
 
   async deleteVendor(userId: bigint, id: bigint) {
-    const existing = await prisma.vendor.findUnique({
-      where: { id },
+    const existing = await prisma.vendor.findFirst({
+      where: { id, ...(userId ? { userId } : {}) },
       select: { id: true, name: true },
     });
 
@@ -607,9 +623,12 @@ export const vendorService = {
       for (const row of validRowsToInsert) {
         const line = seenNormalizedNamesInFile.get(row.normalizedName)!;
 
-        // Check if normalized name collides with DB vendor name or alias
-        const existingVendor = await tx.vendor.findUnique({
-          where: { normalizedName: row.normalizedName },
+        // Check if normalized name collides with DB vendor name or alias for this user
+        const existingVendor = await tx.vendor.findFirst({
+          where: {
+            normalizedName: row.normalizedName,
+            ...(userId ? { userId } : {}),
+          },
           select: { id: true },
         });
 
@@ -622,7 +641,10 @@ export const vendorService = {
         }
 
         const existingAlias = await tx.vendorAlias.findFirst({
-          where: { normalizedAlias: row.normalizedName },
+          where: {
+            normalizedAlias: row.normalizedName,
+            ...(userId ? { vendor: { userId } } : {}),
+          },
           select: { id: true },
         });
 
@@ -639,7 +661,7 @@ export const vendorService = {
 
       if (finalToCreate.length > 0) {
         await tx.vendor.createMany({
-          data: finalToCreate,
+          data: finalToCreate.map((r) => ({ ...r, userId })),
         });
       }
 
@@ -666,6 +688,7 @@ export const vendorService = {
     if (result.imported > 0) {
       const inserted = await prisma.vendor.findMany({
         where: {
+          ...(userId ? { userId } : {}),
           normalizedName: { in: validRowsToInsert.map((r) => r.normalizedName) },
         },
         select: { id: true },

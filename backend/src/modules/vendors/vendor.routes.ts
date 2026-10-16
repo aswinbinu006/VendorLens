@@ -73,7 +73,7 @@ vendorRouter.use(authenticate);
 vendorRouter.get('/', async (req, res, next) => {
   try {
     const params = listQuerySchema.parse(req.query);
-    const result = await vendorService.listVendors(params);
+    const result = await vendorService.listVendors(params, req.user?.id);
     res.status(200).json(result);
   } catch (err) {
     next(err);
@@ -118,7 +118,7 @@ vendorRouter.post('/import', requireFetchHeader, (req, res, next) => {
 vendorRouter.get('/:id', async (req, res, next) => {
   try {
     const id = BigInt(req.params.id as string);
-    const result = await vendorService.getVendorById(id);
+    const result = await vendorService.getVendorById(id, req.user?.id);
     res.status(200).json(result);
   } catch (err) {
     if (err instanceof TypeError || (err as any).name === 'RangeError') {

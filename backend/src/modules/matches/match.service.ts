@@ -27,16 +27,19 @@ export interface MatchConfirmationResult {
 
 export const matchService = {
   /**
-   * Rescan all registered vendors against all stored signals
+   * Rescan all registered vendors against all stored signals (optionally scoped to user)
    */
-  async scanAllMatches(): Promise<{
+  async scanAllMatches(userId?: bigint): Promise<{
     vendorsScanned: number;
     signalsScanned: number;
     matchesFound: number;
     affectedVendors: number;
   }> {
     const [vendorsRaw, signalsRaw] = await Promise.all([
-      prisma.vendor.findMany({ include: { aliases: true } }),
+      prisma.vendor.findMany({
+        where: userId ? { userId } : {},
+        include: { aliases: true },
+      }),
       prisma.signal.findMany({
         where: { firmName: { not: null } },
         select: { id: true, firmName: true, country: true },
@@ -48,7 +51,9 @@ export const matchService = {
       await this.scoringHook(affected);
     }
 
-    const totalMatches = await prisma.signalMatch.count();
+    const totalMatches = await prisma.signalMatch.count({
+      where: userId ? { vendor: { userId } } : {},
+    });
     return {
       vendorsScanned: vendorsRaw.length,
       signalsScanned: signalsRaw.length,
@@ -199,12 +204,15 @@ export const matchService = {
   /**
    * List pending matches for human review with pagination and filtering.
    */
-  async listPendingMatches(params: ListPendingMatchesParams = {}) {
+  async listPendingMatches(params: ListPendingMatchesParams = {}, userId?: bigint) {
     const page = Math.max(1, params.page || 1);
     const pageSize = Math.min(100, Math.max(1, params.pageSize || 25));
     const skip = (page - 1) * pageSize;
 
     const where: any = {};
+    if (userId) {
+      where.vendor = { userId };
+    }
     if (params.status && params.status !== 'all') {
       where.status = params.status;
     } else if (!params.status) {

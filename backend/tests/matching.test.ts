@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import request from 'supertest';
+import { Prisma } from '@prisma/client';
 import { app } from '../src/app.js';
 import { prisma } from '../src/config/db.js';
 import { normalizeName } from '../src/modules/vendors/normalize.js';
@@ -363,10 +364,11 @@ describe('Phase 4: Matching Engine & Endpoints Suite', () => {
 
       const vendor = await prisma.vendor.create({
         data: {
+          userId: testUser.id,
           name: 'Glenmark Pharmaceuticals',
           normalizedName: 'glenmark pharmaceuticals',
           country: 'United States',
-        },
+        } as Prisma.VendorUncheckedCreateInput,
       });
 
       await prisma.signalMatch.create({

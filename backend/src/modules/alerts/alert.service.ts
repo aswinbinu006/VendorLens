@@ -313,12 +313,16 @@ export const alertService = {
   /**
    * List alerts with pagination and filtering.
    */
-  async listAlerts(params: ListAlertsParams = {}) {
+  async listAlerts(params: ListAlertsParams = {}, userId?: bigint) {
     const page = Math.max(1, params.page || 1);
     const pageSize = Math.min(100, Math.max(1, params.pageSize || 25));
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.AlertWhereInput = {};
+
+    if (userId) {
+      where.vendor = { is: { userId } } as any;
+    }
 
     if (params.status) {
       where.status = params.status;

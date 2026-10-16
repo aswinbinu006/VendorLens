@@ -5,7 +5,7 @@ import type {
   AlertStatus,
 } from '../../types/index.js';
 
-let cachedSummary: { data: DashboardSummary; cachedAt: number } | null = null;
+const userCache = new Map<string, { data: DashboardSummary; cachedAt: number }>();
 const CACHE_TTL_MS = 30 * 1000;
 
 export interface GetSummaryParams {
@@ -20,34 +20,52 @@ export const dashboardService = {
    * Invalidate the in-memory cache (useful for test isolation)
    */
   clearCache(): void {
-    cachedSummary = null;
+    userCache.clear();
   },
 
   /**
-   * Get comprehensive dashboard summary with 30s cache TTL
+   * Get comprehensive dashboard summary with 30s cache TTL scoped per user
    */
-  async getSummary(params: GetSummaryParams = {}): Promise<DashboardSummary> {
-    if (!params.refresh && cachedSummary && (Date.now() - cachedSummary.cachedAt) < CACHE_TTL_MS) {
-      return cachedSummary.data;
+  async getSummary(params: GetSummaryParams = {}, userId?: bigint): Promise<DashboardSummary> {
+    const cacheKey = userId ? userId.toString() : 'all';
+    const cached = userCache.get(cacheKey);
+    if (!params.refresh && cached && (Date.now() - cached.cachedAt) < CACHE_TTL_MS) {
+      return cached.data;
     }
+
+    const vendorWhere: any = userId ? { userId } : {};
+    const vendorAlertWhere: any = userId
+      ? { vendor: { is: { userId } } }
+      : {};
+    const vendorMatchWhere: any = userId
+      ? { vendor: { is: { userId } } }
+      : {};
+
     // Use transaction to fetch all summary data in one database roundtrip
     const result = await prisma.$transaction(async (tx) => {
       // 1. Total vendors count
-      const totalVendors = await tx.vendor.count();
+      const totalVendors = await tx.vendor.count({ where: vendorWhere });
 
       // 2. New alerts (status: 'new')
       const newAlerts = await tx.alert.count({
-        where: { status: 'new' as AlertStatus },
+        where: {
+          status: 'new' as AlertStatus,
+          ...vendorAlertWhere,
+        },
       });
 
       // 2b. Pending matches count
       const pendingMatches = await tx.signalMatch.count({
-        where: { status: 'pending' },
+        where: {
+          status: 'pending',
+          ...vendorMatchWhere,
+        },
       });
 
       // 3. High or critical vendors (level: 'high' or 'critical')
       const highOrCriticalVendors = await tx.vendor.count({
         where: {
+          ...vendorWhere,
           OR: [
             { currentLevel: 'high' as RiskLevel },
             { currentLevel: 'critical' as RiskLevel },
@@ -63,22 +81,25 @@ export const dashboardService = {
         criticalCount,
       ] = await Promise.all([
         tx.vendor.count({
-          where: { currentLevel: 'low' as RiskLevel },
+          where: { currentLevel: 'low' as RiskLevel, ...vendorWhere },
         }),
         tx.vendor.count({
-          where: { currentLevel: 'medium' as RiskLevel },
+          where: { currentLevel: 'medium' as RiskLevel, ...vendorWhere },
         }),
         tx.vendor.count({
-          where: { currentLevel: 'high' as RiskLevel },
+          where: { currentLevel: 'high' as RiskLevel, ...vendorWhere },
         }),
         tx.vendor.count({
-          where: { currentLevel: 'critical' as RiskLevel },
+          where: { currentLevel: 'critical' as RiskLevel, ...vendorWhere },
         }),
       ]);
 
       // 5. Top risky vendors (ordered by score descending, limit 10)
       const topRiskyVendors = await tx.vendor.findMany({
-        where: { currentScore: { not: null } },
+        where: {
+          currentScore: { not: null },
+          ...vendorWhere,
+        },
         orderBy: { currentScore: 'desc' },
         take: 10,
         select: {
@@ -95,6 +116,7 @@ export const dashboardService = {
 
       // 6. Latest alerts with enhanced details (ordered by createdAt descending, limit 10)
       const latestAlerts = await tx.alert.findMany({
+        where: vendorAlertWhere,
         orderBy: { createdAt: 'desc' },
         take: 10,
         include: {
@@ -129,7 +151,7 @@ export const dashboardService = {
     });
 
     const summary = await this.mapToDashboardSummary(result);
-    cachedSummary = { data: summary, cachedAt: Date.now() };
+    userCache.set(cacheKey, { data: summary, cachedAt: Date.now() });
     return summary;
   },
 

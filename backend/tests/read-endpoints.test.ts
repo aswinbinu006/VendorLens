@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
+import { Prisma } from '@prisma/client';
 import { app } from '../src/app.js';
 import { prisma } from '../src/config/db.js';
 import { env } from '../src/config/env.js';
@@ -44,6 +45,7 @@ describe.sequential('Phase 8 Read Endpoints & Dashboard Suite', () => {
     const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     testVendor = await prisma.vendor.create({
       data: {
+        userId: testUser.id,
         name: `Phase8 Pharma ${suffix}`,
         normalizedName: `phase8 pharma ${suffix}`,
         country: 'United States',
@@ -52,7 +54,7 @@ describe.sequential('Phase 8 Read Endpoints & Dashboard Suite', () => {
         currentScore: 62.5,
         currentLevel: 'medium',
         scoredAt: new Date(),
-      },
+      } as Prisma.VendorUncheckedCreateInput,
     });
 
     testSignal = await prisma.signal.create({
@@ -237,9 +239,10 @@ describe.sequential('Phase 8 Read Endpoints & Dashboard Suite', () => {
     it('returns 404 NOT_FOUND if vendor has no computed scores', async () => {
       const unScoredVendor = await prisma.vendor.create({
         data: {
+          userId: testUser.id,
           name: `Unscored Vendor ${Date.now()}`,
           normalizedName: `unscored vendor ${Date.now()}`,
-        },
+        } as Prisma.VendorUncheckedCreateInput,
       });
 
       try {
@@ -305,6 +308,53 @@ describe.sequential('Phase 8 Read Endpoints & Dashboard Suite', () => {
       expect(entry).toBeDefined();
       expect(entry.entity).toBe('audit_test_entity');
       expect(entry.userEmail).toBe(testUser.email);
+    });
+  });
+
+  describe('Multi-Tenant User Data Isolation', () => {
+    it('ensures a newly created user has an isolated workspace without seeing another users vendors or dashboard', async () => {
+      // Create User 2
+      const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const user2 = await prisma.user.create({
+        data: {
+          email: `isolated_user_${suffix}@example.com`,
+          passwordHash: 'dummyhash',
+        },
+      });
+      const token2 = createTestToken({ id: user2.id, email: user2.email });
+
+      try {
+        // User 2 lists vendors - should be empty (0 vendors), not seeing User 1's testVendor
+        const vendorsRes = await request(app)
+          .get('/api/v1/vendors')
+          .set('Cookie', [`${AUTH_COOKIE_NAME}=${token2}`]);
+
+        expect(vendorsRes.status).toBe(200);
+        expect(vendorsRes.body.total).toBe(0);
+        expect(vendorsRes.body.data).toHaveLength(0);
+
+        // User 2 views dashboard summary - totalVendors should be 0
+        const dashRes = await request(app)
+          .get('/api/v1/dashboard/summary?refresh=true')
+          .set('Cookie', [`${AUTH_COOKIE_NAME}=${token2}`]);
+
+        expect(dashRes.status).toBe(200);
+        expect(dashRes.body.totalVendors).toBe(0);
+        expect(dashRes.body.newAlerts).toBe(0);
+        expect(dashRes.body.topRiskyVendors).toHaveLength(0);
+
+        // User 1 lists vendors - still sees their own testVendor
+        const user1VendorsRes = await request(app)
+          .get('/api/v1/vendors')
+          .set('Cookie', [`${AUTH_COOKIE_NAME}=${authToken}`]);
+
+        expect(user1VendorsRes.status).toBe(200);
+        expect(user1VendorsRes.body.total).toBeGreaterThanOrEqual(1);
+        const found = user1VendorsRes.body.data.find((v: any) => v.id === Number(testVendor.id));
+        expect(found).toBeDefined();
+      } finally {
+        await prisma.user.delete({ where: { id: user2.id } });
+      }
     });
   });
 });

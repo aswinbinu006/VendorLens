@@ -27,7 +27,7 @@ const listPendingMatchesQuerySchema = z
 matchRouter.get('/pending', async (req, res, next) => {
   try {
     const params = listPendingMatchesQuerySchema.parse(req.query);
-    const result = await matchService.listPendingMatches(params);
+    const result = await matchService.listPendingMatches(params, req.user?.id);
     res.status(200).json(result);
   } catch (err) {
     next(err);
@@ -35,9 +35,9 @@ matchRouter.get('/pending', async (req, res, next) => {
 });
 
 // POST /api/v1/matches/scan - Re-scan all registered vendors against all signals
-matchRouter.post('/scan', async (_req, res, next) => {
+matchRouter.post('/scan', async (req, res, next) => {
   try {
-    const result = await matchService.scanAllMatches();
+    const result = await matchService.scanAllMatches(req.user?.id);
     res.status(200).json({ success: true, ...result });
   } catch (err) {
     next(err);

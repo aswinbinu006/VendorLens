@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
+import { Prisma } from '@prisma/client';
 import { app } from '../src/app.js';
 import { prisma } from '../src/config/db.js';
 import { env } from '../src/config/env.js';
@@ -42,11 +43,12 @@ describe.sequential('Phase 6 Alerts & Compliance Rules Suite', () => {
     const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     testVendor = await prisma.vendor.create({
       data: {
+        userId: testUser.id,
         name: `Alert Test Pharma ${suffix}`,
         normalizedName: `alert test pharma ${suffix}`,
         country: 'United States',
         criticality: 3,
-      },
+      } as Prisma.VendorUncheckedCreateInput,
     });
   });
 
