@@ -217,7 +217,8 @@ export function matchSignalToVendors(
       }
     }
 
-    const qualifies = bestScore >= threshold || sameFirstToken || sharedDistinctWord;
+    const minTokenThreshold = Math.min(threshold, 0.20);
+    const qualifies = (sameFirstToken && bestScore >= minTokenThreshold) || (sharedDistinctWord && bestScore >= 0.35) || bestScore >= 0.85;
     if (!qualifies) {
       continue; // Discard
     }
