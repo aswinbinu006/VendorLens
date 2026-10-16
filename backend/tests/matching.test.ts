@@ -461,43 +461,48 @@ describe('Phase 4: Matching Engine & Endpoints Suite', () => {
 
       const vendor = await prisma.vendor.create({
         data: {
-          name: 'Target Vendor',
-          normalizedName: 'target vendor',
+          name: `Test Reject Vendor ${Date.now()}`,
+          normalizedName: `test reject vendor ${Date.now()}`,
         },
       });
 
-      const match = await prisma.signalMatch.create({
-        data: {
-          signalId: signal.id,
-          vendorId: vendor.id,
-          status: 'pending',
-          score: 0.62,
-        },
-      });
+      try {
+        const match = await prisma.signalMatch.create({
+          data: {
+            signalId: signal.id,
+            vendorId: vendor.id,
+            status: 'pending',
+            score: 0.62,
+          },
+        });
 
-      const res = await request(app)
-        .post(`/api/v1/matches/${match.id}/reject`)
-        .set('Cookie', authCookie)
-        .send({});
+        const res = await request(app)
+          .post(`/api/v1/matches/${match.id}/reject`)
+          .set('Cookie', authCookie)
+          .send({});
 
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
 
-      const dbMatch = await prisma.signalMatch.findUnique({
-        where: { id: match.id },
-      });
-      expect(dbMatch?.status).toBe('rejected');
-      expect(dbMatch?.decidedBy).toBe(testUser.id);
+        const dbMatch = await prisma.signalMatch.findUnique({
+          where: { id: match.id },
+        });
+        expect(dbMatch?.status).toBe('rejected');
+        expect(dbMatch?.decidedBy).toBe(testUser.id);
 
-      // Verify audit log
-      const audit = await prisma.auditLog.findFirst({
-        where: {
-          action: 'REJECT_MATCH',
-          entityId: match.id.toString(),
-        },
-      });
-      expect(audit).toBeDefined();
-      expect(audit?.userId).toBe(testUser.id);
+        // Verify audit log
+        const audit = await prisma.auditLog.findFirst({
+          where: {
+            action: 'REJECT_MATCH',
+            entityId: match.id.toString(),
+          },
+        });
+        expect(audit).toBeDefined();
+        expect(audit?.userId).toBe(testUser.id);
+      } finally {
+        await prisma.vendor.delete({ where: { id: vendor.id } }).catch(() => {});
+        await prisma.signal.delete({ where: { id: signal.id } }).catch(() => {});
+      }
     });
   });
 });
