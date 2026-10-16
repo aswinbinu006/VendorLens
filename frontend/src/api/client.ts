@@ -78,12 +78,6 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   });
 
   if (!res.ok) {
-    if (res.status === 401) {
-      // Redirect to /login if unauthenticated and not already on /login
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-      }
-    }
 
     let errorData: ApiErrorResponse | null = null;
     try {
