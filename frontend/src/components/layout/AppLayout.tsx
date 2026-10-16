@@ -40,7 +40,7 @@ export const AppLayout: React.FC<{
   const navItems: NavItem[] = [
     {
       label: 'Dashboard',
-      path: '/',
+      path: '/dashboard',
       icon: <LayoutDashboard className="w-4 h-4 text-[#525252]" />,
     },
     {
@@ -105,7 +105,7 @@ export const AppLayout: React.FC<{
 
         <div className="flex items-center gap-4 text-xs">
           <Link
-            to="/landing"
+            to="/"
             className="text-[#C6C6C6] hover:text-white inline-flex items-center gap-1"
             title="Public Overview"
           >

@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LoginPage } from '@/pages/LoginPage';
@@ -28,34 +28,6 @@ const queryClient = new QueryClient({
   },
 });
 
-/**
- * Root Index Route:
- * When a visitor arrives at "/" :
- * - If authenticated: Renders the Dashboard within AppLayout.
- * - If not authenticated: Renders the LandingPage with platform overview and onboarding.
- */
-const RootIndexRoute: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F4F4] text-xs text-[#525252]">
-        Loading...
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <LandingPage />;
-  }
-
-  return (
-    <AppLayout>
-      <DashboardPage />
-    </AppLayout>
-  );
-};
-
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -69,14 +41,14 @@ export const App: React.FC = () => {
             }
           >
             <Routes>
-              {/* Public Landing & Login */}
-              <Route path="/landing" element={<LandingPage />} />
+              {/* Root URL is always the public Landing Page */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/landing" element={<Navigate to="/" replace />} />
+
+              {/* Login */}
               <Route path="/login" element={<LoginPage />} />
 
-              {/* Dynamic Root Route */}
-              <Route path="/" element={<RootIndexRoute />} />
-
-              {/* Protected Routes inside AppLayout */}
+              {/* Protected Console Routes inside AppLayout */}
               <Route
                 element={
                   <ProtectedRoute>
@@ -84,18 +56,18 @@ export const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               >
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="vendors" element={<VendorsPage />} />
-                <Route path="vendors/:id" element={<VendorDetailPage />} />
-                <Route path="matches" element={<MatchesPage />} />
-                <Route path="alerts" element={<AlertsPage />} />
-                <Route path="ingestion" element={<IngestionPage />} />
-                <Route path="audit" element={<AuditLogPage />} />
-                <Route path="settings/fuzzy" element={<FuzzySettingsPage />} />
-                <Route path="companies" element={<CompaniesPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/vendors" element={<VendorsPage />} />
+                <Route path="/vendors/:id" element={<VendorDetailPage />} />
+                <Route path="/matches" element={<MatchesPage />} />
+                <Route path="/alerts" element={<AlertsPage />} />
+                <Route path="/ingestion" element={<IngestionPage />} />
+                <Route path="/audit" element={<AuditLogPage />} />
+                <Route path="/settings/fuzzy" element={<FuzzySettingsPage />} />
+                <Route path="/companies" element={<CompaniesPage />} />
               </Route>
 
-              {/* Fallback */}
+              {/* Fallback to Root Landing Page */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

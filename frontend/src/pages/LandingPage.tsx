@@ -36,7 +36,7 @@ export const LandingPage: React.FC = () => {
     setDemoLoginLoading(true);
     try {
       await login('admin@example.com', 'AdminStrongPass!2026');
-      navigate('/');
+      navigate('/dashboard');
     } catch {
       navigate('/login');
     } finally {
@@ -103,7 +103,7 @@ export const LandingPage: React.FC = () => {
 
           {isAuthenticated ? (
             <Link
-              to="/"
+              to="/dashboard"
               className="h-8 px-3 bg-[#0F62FE] text-white font-semibold flex items-center hover:bg-[#0050E6]"
             >
               Open console
@@ -139,7 +139,7 @@ export const LandingPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3 pt-2">
             {isAuthenticated ? (
               <Link
-                to="/"
+                to="/dashboard"
                 className="h-10 px-5 bg-[#0F62FE] text-white text-xs font-semibold flex items-center hover:bg-[#0050E6] cursor-pointer"
               >
                 Enter compliance dashboard

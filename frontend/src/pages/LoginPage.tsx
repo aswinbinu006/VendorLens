@@ -7,7 +7,7 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectPath = searchParams.get('redirect') || '/';
+  const redirectPath = searchParams.get('redirect') || '/dashboard';
 
   const [activeTab, setActiveTab] = useState<'signin' | 'request'>('signin');
 
@@ -275,7 +275,7 @@ export const LoginPage: React.FC = () => {
         <div className="pt-2 text-center text-[11px] text-[#525252] space-y-2">
           <div>Authorized FDA compliance personnel only.</div>
           <div>
-            <Link to="/landing" className="text-[#0F62FE] hover:underline font-semibold">
+            <Link to="/" className="text-[#0F62FE] hover:underline font-semibold">
               &larr; Back to Platform Overview
             </Link>
           </div>
