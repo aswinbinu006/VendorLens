@@ -95,13 +95,17 @@ export function createApp(customEnv?: Partial<EnvConfig>): Express {
   app.use(globalLimiter);
 
   // Health and Readiness probes (no auth needed)
-  app.get('/health', (_req, res) => {
+  const healthHandler = (_req: any, res: any) => {
     res.status(200).json({ status: 'ok', uptime: process.uptime() });
-  });
-
-  app.get('/ready', (_req, res) => {
+  };
+  const readyHandler = (_req: any, res: any) => {
     res.status(200).json({ status: 'ready', database: 'connected' });
-  });
+  };
+
+  app.get('/health', healthHandler);
+  app.get('/ready', readyHandler);
+  app.get('/api/v1/health', healthHandler);
+  app.get('/api/v1/ready', readyHandler);
 
   // API Routes
   app.use('/api/v1/auth', authRouter);
