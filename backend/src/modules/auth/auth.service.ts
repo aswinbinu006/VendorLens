@@ -79,4 +79,32 @@ export const authService = {
       throw new AppError(401, 'UNAUTHENTICATED', 'Session expired or invalid');
     }
   },
+
+  async registerCompanyUser(email: string, password: string): Promise<{ id: number; email: string; createdAt: Date }> {
+    const cleanEmail = email.toLowerCase().trim();
+    const existing = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    if (existing) {
+      throw new AppError(409, 'CONFLICT', 'A company user with this email already exists');
+    }
+    const passwordHash = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({
+      data: {
+        email: cleanEmail,
+        passwordHash,
+      },
+    });
+    return {
+      id: Number(user.id),
+      email: user.email,
+      createdAt: user.createdAt,
+    };
+  },
+
+  async listUsers(): Promise<Array<{ id: number; email: string; createdAt: Date }>> {
+    const users = await prisma.user.findMany({
+      select: { id: true, email: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return users.map((u) => ({ id: Number(u.id), email: u.email, createdAt: u.createdAt }));
+  },
 };

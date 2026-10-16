@@ -57,3 +57,47 @@ authRouter.get('/me', authenticate, (req, res) => {
     },
   });
 });
+
+// GET /auth/users - List provisioned companies / users (Super-Admin only)
+authRouter.get('/users', authenticate, async (_req, res, next) => {
+  try {
+    const users = await authService.listUsers();
+    res.status(200).json({ data: users });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/provision-company - Super-Admin creates a new client company account
+authRouter.post('/provision-company', authenticate, requireFetchHeader, async (req, res, next) => {
+  try {
+    const schema = z.object({
+      email: z.string().email(),
+      password: z.string().min(8, 'Password must be at least 8 characters'),
+    });
+    const { email, password } = schema.parse(req.body);
+    const user = await authService.registerCompanyUser(email, password);
+    res.status(201).json({ success: true, user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/request-access - Public company registration request
+authRouter.post('/request-access', requireFetchHeader, async (req, res, next) => {
+  try {
+    const schema = z.object({
+      companyName: z.string().min(2),
+      email: z.string().email(),
+      contactName: z.string().min(2),
+      notes: z.string().optional(),
+    });
+    schema.parse(req.body);
+    res.status(200).json({
+      success: true,
+      message: 'Access request submitted. A Super-Admin will review and issue enterprise credentials within 24 hours.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});

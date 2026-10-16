@@ -261,4 +261,23 @@ export const apiClient = {
   async getReady(): Promise<{ status: string; database: string }> {
     return request<{ status: string; database: string }>('/ready');
   },
+
+  // Company / User Management
+  async getUsers(): Promise<{ data: Array<{ id: number; email: string; createdAt: string }> }> {
+    return request<{ data: Array<{ id: number; email: string; createdAt: string }> }>('/auth/users');
+  },
+
+  async provisionCompany(input: { email: string; password: string }): Promise<{ success: boolean; user: any }> {
+    return request<{ success: boolean; user: any }>('/auth/provision-company', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  async requestAccess(input: { companyName: string; email: string; contactName: string; notes?: string }): Promise<{ success: boolean; message: string }> {
+    return request<{ success: boolean; message: string }>('/auth/request-access', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
 };

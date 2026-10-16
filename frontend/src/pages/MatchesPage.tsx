@@ -12,6 +12,8 @@ import {
   ShieldCheck,
   ArrowRight,
   Layers,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import type { PendingMatchItem } from '@/types/api';
 
@@ -32,6 +34,26 @@ export const MatchesPage: React.FC = () => {
   const rejectMatch = useRejectMatch();
 
   const [processingVendors, setProcessingVendors] = useState<Record<string, boolean>>({});
+  const [expandedVendors, setExpandedVendors] = useState<Record<string, boolean>>({});
+
+  const toggleVendorExpanded = (vendorName: string) => {
+    setExpandedVendors((prev) => ({
+      ...prev,
+      [vendorName]: !prev[vendorName],
+    }));
+  };
+
+  const expandAll = () => {
+    const all: Record<string, boolean> = {};
+    vendorGroups.forEach((g) => {
+      all[g.vendorName] = true;
+    });
+    setExpandedVendors(all);
+  };
+
+  const retractAll = () => {
+    setExpandedVendors({});
+  };
 
   // Group pending matches by Vendor Name
   const vendorGroups = useMemo<VendorMatchGroup[]>(() => {
@@ -144,17 +166,33 @@ export const MatchesPage: React.FC = () => {
         />
       ) : vendorGroups.length > 0 ? (
         <div className="space-y-6">
-          <div className="flex items-center justify-between text-xs text-[#525252] pb-1 border-b border-[#E0E0E0]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-[#525252] pb-2 border-b border-[#E0E0E0] gap-2">
             <span>
               Showing <strong>{vendorGroups.length} suppliers</strong> with <strong>{data?.data.length || 0} total pending incidents</strong> (Page {page})
             </span>
-            <span className="font-mono text-[11px]">Threshold: 0.60 &le; similarity &lt; 0.85</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={expandAll}
+                className="px-2.5 py-1 text-xs border border-[#E0E0E0] bg-[#FFFFFF] hover:bg-[#E8E8E8] text-[#161616] cursor-pointer"
+              >
+                Expand all
+              </button>
+              <button
+                type="button"
+                onClick={retractAll}
+                className="px-2.5 py-1 text-xs border border-[#E0E0E0] bg-[#FFFFFF] hover:bg-[#E8E8E8] text-[#161616] cursor-pointer"
+              >
+                Retract all
+              </button>
+            </div>
           </div>
 
           {/* Grouped Vendor Cards */}
           <div className="space-y-6">
             {vendorGroups.map((group) => {
               const isGroupBusy = processingVendors[group.vendorName] || false;
+              const isExpanded = expandedVendors[group.vendorName] ?? false;
 
               return (
                 <section
@@ -162,8 +200,11 @@ export const MatchesPage: React.FC = () => {
                   className="bg-[#FFFFFF] border border-[#E0E0E0] overflow-hidden"
                   aria-label={`Match review for ${group.vendorName}`}
                 >
-                  {/* Supplier Clubbed Header */}
-                  <div className="bg-[#F4F4F4] border-b border-[#E0E0E0] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  {/* Supplier Clubbed Header - Clickable to Retract/Expand */}
+                  <div
+                    onClick={() => toggleVendorExpanded(group.vendorName)}
+                    className="bg-[#F4F4F4] border-b border-[#E0E0E0] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none hover:bg-[#EAEAEA]"
+                  >
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <Building2 className="w-4 h-4 text-[#161616]" />
@@ -185,6 +226,7 @@ export const MatchesPage: React.FC = () => {
                         <span>•</span>
                         <Link
                           to={`/vendors/${group.vendorId}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center gap-1 text-[#0F62FE] hover:underline font-semibold"
                         >
                           View supplier profile &amp; finalize business decision <ArrowRight className="w-3 h-3" />
@@ -192,8 +234,30 @@ export const MatchesPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Batch Actions for this Supplier */}
-                    <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-center">
+                    {/* Batch Actions & Retract/Expand Toggle for this Supplier */}
+                    <div
+                      className="flex items-center gap-2 flex-shrink-0 self-end md:self-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleVendorExpanded(group.vendorName)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#FFFFFF] hover:bg-[#E8E8E8] text-[#161616] border border-[#E0E0E0] cursor-pointer"
+                        title={isExpanded ? 'Retract incident list' : 'Expand incident list'}
+                      >
+                        {isExpanded ? (
+                          <>
+                            <ChevronUp className="w-3.5 h-3.5 text-[#525252]" />
+                            <span>Retract ({group.items.length})</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-3.5 h-3.5 text-[#525252]" />
+                            <span>Expand ({group.items.length})</span>
+                          </>
+                        )}
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleConfirmAllForVendor(group)}
@@ -218,8 +282,25 @@ export const MatchesPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* List of Incidents under this Supplier */}
-                  <div className="divide-y divide-[#E0E0E0]">
+                  {/* Retracted Notice Bar when collapsed */}
+                  {!isExpanded && (
+                    <div
+                      onClick={() => toggleVendorExpanded(group.vendorName)}
+                      className="p-3 bg-[#FFFFFF] border-b border-[#E0E0E0] text-xs text-[#525252] flex items-center justify-between cursor-pointer hover:bg-[#F4F4F4]"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <span className="font-semibold text-[#161616]">Retracted:</span>
+                        <span>{group.items.length} pending incidents hidden for this supplier. Click header or Expand button to inspect.</span>
+                      </span>
+                      <span className="text-[#0F62FE] font-semibold flex items-center gap-1">
+                        Expand supplier incidents &rarr;
+                      </span>
+                    </div>
+                  )}
+
+                  {/* List of Incidents under this Supplier (Conditionally rendered when expanded) */}
+                  {isExpanded && (
+                    <div className="divide-y divide-[#E0E0E0]">
                     {group.items.map((match, idx) => (
                       <div
                         key={match.id}
@@ -309,7 +390,8 @@ export const MatchesPage: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                </section>
+                )}
+              </section>
               );
             })}
           </div>
