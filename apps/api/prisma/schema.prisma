@@ -1,0 +1,248 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum MatchStatus {
+  auto
+  pending
+  confirmed
+  rejected
+
+  @@map("match_status")
+}
+
+enum SignalType {
+  recall
+  news
+
+  @@map("signal_type")
+}
+
+enum TrustLevel {
+  official
+  unverified
+
+  @@map("trust_level")
+}
+
+enum RiskLevel {
+  low
+  medium
+  high
+  critical
+
+  @@map("risk_level")
+}
+
+enum AlertStatus {
+  new
+  reviewed
+  dismissed
+
+  @@map("alert_status")
+}
+
+enum AlertKind {
+  new_official_signal
+  class_i_recall
+  level_increase
+  news_cluster
+  ingestion_failure
+
+  @@map("alert_kind")
+}
+
+enum RunStatus {
+  running
+  success
+  partial
+  failed
+
+  @@map("run_status")
+}
+
+model User {
+  id           BigInt   @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  decidedMatches SignalMatch[]
+  reviewedAlerts Alert[]
+  createdConfigs FuzzyConfig[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model Vendor {
+  id             BigInt     @id @default(autoincrement())
+  name           String
+  normalizedName String     @unique @map("normalized_name")
+  country        String?
+  category       String?
+  criticality    Int        @default(3) @db.SmallInt
+  notes          String?
+  currentScore   Float?     @map("current_score") @db.Real
+  currentLevel   RiskLevel? @map("current_level")
+  scoredAt       DateTime?  @map("scored_at") @db.Timestamptz
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  aliases    VendorAlias[]
+  matches    SignalMatch[]
+  riskScores RiskScore[]
+  alerts     Alert[]
+
+  @@index([currentLevel, currentScore(sort: Desc)], map: "vendors_level_score")
+  @@map("vendors")
+}
+
+model VendorAlias {
+  id              BigInt @id @default(autoincrement())
+  vendorId        BigInt @map("vendor_id")
+  alias           String
+  normalizedAlias String @map("normalized_alias")
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, normalizedAlias])
+  @@map("vendor_aliases")
+}
+
+model Signal {
+  id           BigInt     @id @default(autoincrement())
+  source       String     // 'openfda_enforcement' | 'news_rss'
+  sourceId     String     @map("source_id")
+  signalType   SignalType @map("signal_type")
+  trust        TrustLevel
+  firmName     String?    @map("firm_name")
+  severityRaw  String?    @map("severity_raw")
+  severityNum          Int?       @map("severity_num") @db.SmallInt
+  termWeight           Float?     @map("term_weight") @db.Real
+  sourceDomain         String?    @map("source_domain")
+  title                String?
+  summary              String?
+  eventDate            DateTime?  @map("event_date") @db.Date
+  recallInitiationDate DateTime?  @map("recall_initiation_date") @db.Date
+  reportDate           DateTime?  @map("report_date") @db.Date
+  country              String?
+  url                  String?
+  raw                  Json
+  contentHash          String?    @map("content_hash")
+  fetchedAt            DateTime   @default(now()) @map("fetched_at") @db.Timestamptz
+  updatedAt            DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  eventId              String?    @map("event_id")
+  matches SignalMatch[]
+  alerts  Alert[]
+
+  @@unique([source, sourceId])
+  @@index([eventDate(sort: Desc)], map: "signals_event_date")
+  @@index([eventId], map: "signals_event_id")
+  @@map("signals")
+}
+
+model SignalMatch {
+  id         BigInt      @id @default(autoincrement())
+  signalId   BigInt      @map("signal_id")
+  vendorId   BigInt      @map("vendor_id")
+  status     MatchStatus
+  score      Float       @db.Real
+  decidedBy  BigInt?     @map("decided_by")
+  decidedAt  DateTime?   @map("decided_at") @db.Timestamptz
+
+  signal  Signal @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  vendor  Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  decider User?  @relation(fields: [decidedBy], references: [id], onDelete: SetNull)
+
+  @@unique([signalId, vendorId])
+  @@index([vendorId, status], map: "matches_vendor_status")
+  @@map("signal_matches")
+}
+
+model FuzzyConfig {
+  id        Int      @id @default(autoincrement())
+  version   Int      @unique
+  config    Json
+  isActive  Boolean  @default(false) @map("is_active")
+  createdBy BigInt?  @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  creator User? @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@map("fuzzy_config")
+}
+
+model RiskScore {
+  id            BigInt    @id @default(autoincrement())
+  vendorId      BigInt    @map("vendor_id")
+  score         Float     @db.Real
+  level         RiskLevel
+  inputs        Json
+  firedRules    Json      @map("fired_rules")
+  configVersion Int       @map("config_version")
+  computedAt    DateTime  @default(now()) @map("computed_at") @db.Timestamptz
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, computedAt(sort: Desc)], map: "scores_vendor_time")
+  @@map("risk_scores")
+}
+
+model Alert {
+  id         BigInt      @id @default(autoincrement())
+  vendorId   BigInt?     @map("vendor_id")
+  signalId   BigInt?     @map("signal_id")
+  kind       AlertKind
+  level      RiskLevel
+  message    String
+  dedupeKey  String      @unique @map("dedupe_key")
+  status     AlertStatus @default(new)
+  note       String?
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  reviewedBy BigInt?     @map("reviewed_by")
+  reviewedAt DateTime?   @map("reviewed_at") @db.Timestamptz
+
+  vendor   Vendor? @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  signal   Signal? @relation(fields: [signalId], references: [id], onDelete: SetNull)
+  reviewer User?   @relation(fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)], map: "alerts_status_time")
+  @@map("alerts")
+}
+
+model IngestionRun {
+  id                BigInt    @id @default(autoincrement())
+  source            String
+  trigger           String    // 'schedule' | 'manual'
+  startedAt         DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  finishedAt        DateTime? @map("finished_at") @db.Timestamptz
+  status            RunStatus
+  fetched           Int       @default(0)
+  newRecords        Int       @default(0) @map("new_records")
+  updatedRecords    Int       @default(0) @map("updated_records")
+  sourceLastUpdated DateTime? @map("source_last_updated") @db.Timestamptz
+  error             String?
+
+  @@map("ingestion_runs")
+}
+
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt?  @map("user_id")
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt(sort: Desc)], map: "audit_time")
+  @@map("audit_log")
+}

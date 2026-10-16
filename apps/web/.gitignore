@@ -1,0 +1,10 @@
+# Frontend specific gitignore
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.*
+*.env
+!.env.example
+*.log
+coverage/

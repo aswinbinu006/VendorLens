@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: vrm_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_SUPERUSER_PASSWORD:-postgres_superuser_pass}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vrm"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: vrm_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgresql://vrm_app:${DB_APP_PASSWORD:-vrm_secure_password}@db:5432/vrm
+    ports:
+      - "4000:4000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: vrm_web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:
+    driver: local

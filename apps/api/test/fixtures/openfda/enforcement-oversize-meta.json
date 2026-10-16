@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "disclaimer": "Do not rely on openFDA to make decisions regarding medical care.",
+    "terms": "https://open.fda.gov/terms/",
+    "license": "https://open.fda.gov/license/",
+    "last_updated": "2026-10-07",
+    "results": {
+      "skip": 0,
+      "limit": 1,
+      "total": 28500
+    }
+  },
+  "results": []
+}

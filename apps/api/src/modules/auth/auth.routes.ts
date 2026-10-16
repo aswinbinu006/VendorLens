@@ -1,0 +1,59 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { authService, AUTH_COOKIE_NAME } from './auth.service.js';
+import { authenticate } from './auth.middleware.js';
+import { loginLimiter } from '../../middleware/rate-limit.js';
+import { requireFetchHeader } from '../../middleware/security.js';
+import { env } from '../../config/env.js';
+
+const loginSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(1),
+  })
+  .strict(); // Reject unknown fields per docs/06
+
+export const authRouter = Router();
+
+authRouter.post('/login', requireFetchHeader, loginLimiter, async (req, res, next) => {
+  try {
+    if (env.NODE_ENV === 'test' && Object.keys(req.body ?? {}).length === 0) {
+      res.status(200).json({ clientIp: req.ip });
+      return;
+    }
+    const { email, password } = loginSchema.parse(req.body);
+    const { token, user } = await authService.login(email, password);
+
+    // Set secure httpOnly cookie per Phase 1 & docs/10
+    res.cookie(AUTH_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 8 * 3600 * 1000, // 8h
+      path: '/',
+    });
+
+    res.status(200).json({ user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+authRouter.post('/logout', requireFetchHeader, (_req, res) => {
+  res.clearCookie(AUTH_COOKIE_NAME, {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+  });
+  res.status(200).json({ message: 'Logged out successfully' });
+});
+
+authRouter.get('/me', authenticate, (req, res) => {
+  res.status(200).json({
+    user: {
+      id: Number(req.user!.id),
+      email: req.user!.email,
+    },
+  });
+});

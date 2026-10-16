@@ -1,0 +1,1 @@
+export { default as signalsRouter } from './signals.routes.js';
