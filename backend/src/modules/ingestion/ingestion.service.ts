@@ -176,82 +176,92 @@ export class IngestionService {
     let updatedCount = 0;
     let unchangedCount = 0;
 
-    const batchSize = 500;
+    const batchSize = 100;
     for (let i = 0; i < records.length; i += batchSize) {
       const batch = records.slice(i, i + batchSize);
 
-      await prisma.$transaction(async (tx) => {
-        for (const item of batch) {
-          // Find existing record by unique (source, sourceId)
-          const existing = await tx.signal.findUnique({
+      await prisma.$transaction(
+        async (tx) => {
+          // Optimization: Pre-fetch all existing records in this batch in a single query
+          const sourceIds = batch.map((item) => item.sourceId);
+          const existingRecords = await tx.signal.findMany({
             where: {
-              source_sourceId: {
-                source: item.source,
-                sourceId: item.sourceId,
-              },
+              source: batch[0].source,
+              sourceId: { in: sourceIds },
             },
             select: {
               id: true,
+              sourceId: true,
               contentHash: true,
             },
           });
 
-          if (!existing) {
-            // New record insertion
-            const created = await tx.signal.create({
-              data: {
-                source: item.source,
-                sourceId: item.sourceId,
-                signalType: item.signalType,
-                trust: item.trust,
-                firmName: item.firmName,
-                severityRaw: item.severityRaw,
-                severityNum: item.severityNum,
-                title: item.title,
-                summary: item.summary,
-                eventDate: item.eventDate,
-                recallInitiationDate: item.recallInitiationDate,
-                reportDate: item.reportDate,
-                country: item.country,
-                eventId: item.eventId,
-                url: item.url,
-                raw: item.raw as any,
-                contentHash: item.contentHash,
-              },
-              select: { id: true },
-            });
-            insertedIds.push(created.id);
-            insertedCount++;
-          } else if (existing.contentHash !== item.contentHash) {
-            // Content changed -> update
-            const updated = await tx.signal.update({
-              where: { id: existing.id },
-              data: {
-                firmName: item.firmName,
-                severityRaw: item.severityRaw,
-                severityNum: item.severityNum,
-                title: item.title,
-                summary: item.summary,
-                eventDate: item.eventDate,
-                recallInitiationDate: item.recallInitiationDate,
-                reportDate: item.reportDate,
-                country: item.country,
-                eventId: item.eventId,
-                url: item.url,
-                raw: item.raw as any,
-                contentHash: item.contentHash,
-                updatedAt: new Date(),
-              },
-              select: { id: true },
-            });
-            updatedIds.push(updated.id);
-            updatedCount++;
-          } else {
-            // Content hash matches exactly -> unchanged
-            unchangedCount++;
+          const existingMap = new Map(existingRecords.map((r) => [r.sourceId, r]));
+
+          for (const item of batch) {
+            const existing = existingMap.get(item.sourceId);
+
+            if (!existing) {
+              // New record insertion
+              const created = await tx.signal.create({
+                data: {
+                  source: item.source,
+                  sourceId: item.sourceId,
+                  signalType: item.signalType,
+                  trust: item.trust,
+                  firmName: item.firmName,
+                  severityRaw: item.severityRaw,
+                  severityNum: item.severityNum,
+                  title: item.title,
+                  summary: item.summary,
+                  eventDate: item.eventDate,
+                  recallInitiationDate: item.recallInitiationDate,
+                  reportDate: item.reportDate,
+                  country: item.country,
+                  eventId: item.eventId,
+                  url: item.url,
+                  raw: item.raw as any,
+                  contentHash: item.contentHash,
+                },
+                select: { id: true },
+              });
+              insertedIds.push(created.id);
+              insertedCount++;
+            } else if (existing.contentHash !== item.contentHash) {
+              // Content changed -> update
+              const updated = await tx.signal.update({
+                where: { id: existing.id },
+                data: {
+                  firmName: item.firmName,
+                  severityRaw: item.severityRaw,
+                  severityNum: item.severityNum,
+                  title: item.title,
+                  summary: item.summary,
+                  eventDate: item.eventDate,
+                  recallInitiationDate: item.recallInitiationDate,
+                  reportDate: item.reportDate,
+                  country: item.country,
+                  eventId: item.eventId,
+                  url: item.url,
+                  raw: item.raw as any,
+                  contentHash: item.contentHash,
+                  updatedAt: new Date(),
+                },
+                select: { id: true },
+              });
+              updatedIds.push(updated.id);
+              updatedCount++;
+            } else {
+              // Content hash matches exactly -> unchanged
+              unchangedCount++;
+            }
           }
+        },
+        {
+          maxWait: 10000,
+          timeout: 60000,
         }
-      });
+      );
     }
 
     return {
