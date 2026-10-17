@@ -8,7 +8,8 @@ import {
   useImportVendors,
 } from '@/hooks/useVendor';
 import { DataTable, type Column } from '@/components/common/DataTable';
-import { LoadingState, ErrorState, EmptyState } from '@/components/common/States';
+import { ErrorState, EmptyState } from '@/components/common/States';
+import { TableSkeleton } from '@/components/common/Skeleton';
 import { RiskBadge } from '@/components/common/RiskBadge';
 import { CriticalityBadge } from '@/components/common/Badges';
 import { VendorForm } from '@/components/vendor/VendorForm';
@@ -357,7 +358,7 @@ export const VendorsPage: React.FC = () => {
 
       {/* Main Table Content */}
       {isLoading ? (
-        <LoadingState message="Loading vendor watchlist..." count={5} />
+        <TableSkeleton rows={8} />
       ) : error ? (
         <ErrorState
           title="Could not load vendors"

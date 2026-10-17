@@ -7,7 +7,8 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=backend",
+    "dev": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:all": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
     "build": "npm run build:backend && npm run build:frontend",
@@ -20,7 +21,7 @@
     "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
     "typecheck:backend": "npm run typecheck --workspace=backend",
     "typecheck:frontend": "npm run typecheck --workspace=frontend",
-    "test": "npm run test --workspace=backend && npm run test --workspace=frontend",
+    "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "npm run test --workspace=backend",
     "test:frontend": "npm run test --workspace=frontend",
     "db:generate": "npm run prisma:generate --workspace=backend",
@@ -29,5 +30,8 @@
     "demo:candidates": "npm run demo:candidates --workspace=backend",
     "proof": "npm run proof --workspace=backend",
     "check:secrets": "node backend/scripts/secret-scan.js"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
   }
 }

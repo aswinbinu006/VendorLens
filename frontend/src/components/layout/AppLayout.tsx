@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard,
@@ -10,22 +10,28 @@ import {
   FileText,
   Sliders,
   LogOut,
-  Menu,
-  X,
   ExternalLink,
   ShieldCheck,
+  Menu,
+  X,
 } from 'lucide-react';
 
 import { isSuperAdminUser } from '@/utils/auth';
-
 import { useDashboardSummary } from '@/hooks/useDashboard';
+import { PillNav, PillNavItem } from '@/components/ui/PillNav';
 
-interface NavItem {
-  label: string;
-  path: string;
-  icon: React.ReactNode;
-  badge?: number;
-}
+const RouterLink: React.FC<{
+  href?: string;
+  className?: string;
+  children?: React.ReactNode;
+  [key: string]: any;
+}> = ({ href, className, children, ...props }) => {
+  return (
+    <Link to={href || '#'} className={className} {...props}>
+      {children}
+    </Link>
+  );
+};
 
 export const AppLayout: React.FC<{
   pendingMatchesCount?: number;
@@ -33,6 +39,7 @@ export const AppLayout: React.FC<{
   children?: React.ReactNode;
 }> = ({ pendingMatchesCount, newAlertsCount, children }) => {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: dashboardData } = useDashboardSummary();
 
@@ -41,173 +48,187 @@ export const AppLayout: React.FC<{
 
   const isSuperAdmin = isSuperAdminUser(user);
 
-  const navItems: NavItem[] = isSuperAdmin
+  const navItems: PillNavItem[] = isSuperAdmin
     ? [
         {
-          label: 'Client Companies & Tenants',
-          path: '/companies',
+          label: 'Client Companies',
+          href: '/companies',
           icon: <Building2 className="w-4 h-4" />,
         },
         {
-          label: 'Compliance Audit Trail',
-          path: '/audit',
+          label: 'Compliance Audit',
+          href: '/audit',
           icon: <FileText className="w-4 h-4" />,
         },
       ]
     : [
         {
           label: 'Dashboard',
-          path: '/dashboard',
+          href: '/dashboard',
           icon: <LayoutDashboard className="w-4 h-4" />,
         },
         {
           label: 'Vendors Watchlist',
-          path: '/vendors',
+          href: '/vendors',
           icon: <Building2 className="w-4 h-4" />,
         },
         {
           label: 'Match Review',
-          path: '/matches',
+          href: '/matches',
           icon: <GitCompare className="w-4 h-4" />,
           badge: effectivePendingMatches > 0 ? effectivePendingMatches : undefined,
         },
         {
           label: 'Alerts Inbox',
-          path: '/alerts',
+          href: '/alerts',
           icon: <Bell className="w-4 h-4" />,
           badge: effectiveNewAlerts > 0 ? effectiveNewAlerts : undefined,
         },
         {
           label: 'Ingestion Status',
-          path: '/ingestion',
+          href: '/ingestion',
           icon: <RefreshCw className="w-4 h-4" />,
         },
         {
-          label: 'Fuzzy Engine Rules',
-          path: '/settings/fuzzy',
+          label: 'Fuzzy Rules',
+          href: '/settings/fuzzy',
           icon: <Sliders className="w-4 h-4" />,
         },
       ];
 
+  // Determine active href matching current route
+  const currentPath = location.pathname;
+  const activeItem = navItems.find((item) =>
+    item.href === '/dashboard'
+      ? currentPath === '/dashboard'
+      : currentPath.startsWith(item.href || '')
+  );
+  const activeHref = activeItem?.href ?? (isSuperAdmin ? '/companies' : '/dashboard');
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Sleek Top Header */}
-      <header className="h-14 bg-slate-950 border-b border-slate-800 fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 shadow-md">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-slate-300 p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-
-          <Link to={isSuperAdmin ? '/companies' : '/dashboard'} className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-md shadow-blue-500/20 border border-blue-400/30">
-              <ShieldCheck className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <span className="text-white text-sm font-bold tracking-tight">
-                VendorRisk
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                {isSuperAdmin ? 'Platform Administration' : 'Pharma RegOps'}
-              </span>
-            </div>
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-4 text-xs">
-          <Link
-            to="/"
-            className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700"
-            title="Public Overview"
-          >
-            <span>Public Overview</span>
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-          </Link>
-
-          <span className="text-slate-700 hidden sm:inline">|</span>
-
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-slate-300 font-mono text-xs">{user?.email || 'admin@example.com'}</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={logout}
-            className="h-8 px-3 rounded-lg bg-slate-900 text-slate-300 hover:text-rose-400 hover:bg-slate-800 border border-slate-800 transition-colors cursor-pointer inline-flex items-center gap-1.5 font-medium"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign out</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Body Area with Left Nav (240px) and Content Area */}
-      <div className="pt-14 flex flex-1">
-        {/* Modern Sidebar (240px) */}
-        <aside
-          className={`fixed inset-y-0 left-0 top-14 z-40 w-60 bg-slate-900 border-r border-slate-800 flex flex-col transition-transform duration-200 md:static md:translate-x-0 ${
-            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-        >
-          <nav className="flex-1 p-3 space-y-1 overflow-y-auto" aria-label="Main Navigation">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/dashboard'}
-                onClick={() => setMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  `h-10 px-3.5 rounded-xl flex items-center justify-between text-xs font-semibold select-none cursor-pointer transition-all ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                      : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-200'
-                  }`
-                }
-              >
-                <div className="flex items-center gap-3">
-                  {item.icon}
-                  <span>{item.label}</span>
-                </div>
-                {item.badge !== undefined && (
-                  <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                    {item.badge}
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex font-sans dashboard-scope">
+      
+      {/* ========================================================
+          LEFT NAVBAR (PillNav Vertical Sidebar)
+          ======================================================== */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/95 backdrop-blur-md border-r border-slate-200/90 flex flex-col justify-between p-3.5 shadow-sm transition-transform duration-200 md:translate-x-0 ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="space-y-4">
+          {/* PillNav in Vertical Sidebar Orientation */}
+          <PillNav
+            orientation="vertical"
+            logo={
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/25 border border-blue-400/30">
+                <ShieldCheck className="w-5 h-5 text-white" />
+              </div>
+            }
+            logoAlt="VendorRisk"
+            logoHref={isSuperAdmin ? '/companies' : '/dashboard'}
+            brandText={
+              <div className="leading-tight">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-slate-900 tracking-tight">VendorRisk</span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    {isSuperAdmin ? 'Admin' : 'RegOps'}
                   </span>
-                )}
-              </NavLink>
-            ))}
-          </nav>
-
-          {/* Regulatory Standards Footer in Sidebar */}
-          <div className="p-4 border-t border-slate-800/80 bg-slate-950/40 text-[11px] text-slate-400 space-y-1">
-            <div className="font-semibold text-slate-200 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              <span>FDA 21 CFR Part 11</span>
-            </div>
-            <p className="leading-snug text-slate-400">
-              Electronic records &amp; signatures active. All audit events cryptographically verified.
-            </p>
-          </div>
-        </aside>
-
-        {/* Mobile Backdrop */}
-        {mobileMenuOpen && (
-          <div
-            className="fixed inset-0 top-14 z-30 bg-slate-950/70 backdrop-blur-xs md:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-hidden="true"
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5 truncate">Supply Chain Surveillance</p>
+              </div>
+            }
+            items={navItems}
+            activeHref={activeHref}
+            linkComponent={RouterLink}
+            theme="light"
+            itemStyle="pill"
+            hoverEffect="fill"
+            indicator="dot"
+            size="md"
+            surface="none"
+            highlightColor="#2563eb"
+            highlightTextColor="#ffffff"
+            onItemClick={() => setMobileMenuOpen(false)}
           />
-        )}
+        </div>
 
-        {/* Content Area */}
+        {/* Regulatory Standards Card at Sidebar Bottom */}
+        <div className="p-3.5 rounded-2xl bg-gradient-to-b from-slate-50 to-blue-50/40 border border-slate-200/80 text-[11px] text-slate-500 space-y-1 shadow-2xs">
+          <div className="font-semibold text-slate-700 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+            <span>FDA 21 CFR Part 11</span>
+          </div>
+          <p className="leading-snug text-slate-500 text-[10.5px]">
+            Electronic records &amp; signatures active. All audit events cryptographically verified.
+          </p>
+        </div>
+      </aside>
+
+      {/* Mobile Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ========================================================
+          RIGHT CONTENT AREA WITH TOP CONTROL BAR
+          ======================================================== */}
+      <div className="flex-1 flex flex-col md:pl-64 min-w-0">
+        
+        {/* Top Header Controls */}
+        <header className="h-14 bg-white/90 backdrop-blur-md border-b border-slate-200/90 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-xs font-semibold text-slate-700">OpenFDA Live Stream Active</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 sm:gap-3 text-xs">
+            <Link
+              to="/"
+              className="hidden sm:inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200 transition-colors font-medium"
+              title="Public Overview"
+            >
+              <span>Public Overview</span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+            </Link>
+
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono text-[11px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>{user?.email || 'admin@example.com'}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={logout}
+              className="h-8 px-3 rounded-xl bg-white text-slate-700 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-all cursor-pointer inline-flex items-center gap-1.5 font-medium shadow-2xs hover:shadow-xs"
+              title="Sign out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full min-w-0">
           {children ?? <Outlet />}
         </main>
       </div>
+
     </div>
   );
 };

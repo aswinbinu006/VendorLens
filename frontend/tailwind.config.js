@@ -58,9 +58,33 @@ export default {
             border: '#f59e0b',  // amber-500
           },
         },
+        primary: {
+          DEFAULT: '#2563eb',
+          foreground: '#ffffff',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        heading: ["'Tanker'", "'Bebas Neue'", 'sans-serif'],
+      },
+      keyframes: {
+        "pulse-slow": {
+          '0%, 100%': {
+            transform: 'translateX(-100%)',
+          },
+          '50%': {
+            transform: 'translateX(100%)',
+          },
+        },
+        shimmer: {
+          '100%': {
+            transform: 'translateX(100%)',
+          },
+        },
+      },
+      animation: {
+        "pulse-slow": "pulse-slow 3s ease-in-out infinite",
+        shimmer: "shimmer 1.8s infinite",
       },
     },
   },

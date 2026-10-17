@@ -61,8 +61,14 @@ export const App: React.FC = () => {
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Suspense
             fallback={
-              <div className="min-h-screen flex items-center justify-center bg-slate-950 text-xs text-slate-400">
-                Loading...
+              <div className="min-h-screen bg-slate-50 flex flex-col p-6 max-w-7xl mx-auto space-y-6">
+                <div className="h-8 w-48 bg-slate-200/70 rounded-md animate-pulse" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-28 bg-white border border-slate-200/80 rounded-xl p-4 animate-pulse space-y-3" />
+                  ))}
+                </div>
+                <div className="h-64 bg-white border border-slate-200/80 rounded-xl p-5 animate-pulse" />
               </div>
             }
           >

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAlerts, useUpdateAlert } from '@/hooks/useAlert';
-import { LoadingState, ErrorState, EmptyState } from '@/components/common/States';
+import { ErrorState, EmptyState } from '@/components/common/States';
+import { TableSkeleton } from '@/components/common/Skeleton';
 import { RiskBadge } from '@/components/common/RiskBadge';
 import { AlertStatusBadge } from '@/components/common/Badges';
 import {
@@ -130,7 +131,7 @@ export const AlertsPage: React.FC = () => {
 
       {/* Alerts List */}
       {isLoading ? (
-        <LoadingState message="Loading compliance notifications..." count={4} />
+        <TableSkeleton rows={5} />
       ) : error ? (
         <ErrorState
           title="Could not load alerts"

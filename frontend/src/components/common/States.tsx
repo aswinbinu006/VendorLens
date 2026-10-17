@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, RefreshCw, Inbox, AlertTriangle } from 'lucide-react';
+import { AlertCircle, RefreshCw, Inbox } from 'lucide-react';
 
 export const LoadingState: React.FC<{ message?: string; count?: number }> = ({
   message = 'Loading compliance records...',
@@ -100,19 +100,19 @@ export const StaleDataBanner: React.FC<{
 
   return (
     <div
-      className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 rounded-r-md shadow-xs flex items-center justify-between"
+      className="bg-amber-50/70 border border-amber-200/90 p-3.5 mb-4 rounded-xl shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
       role="status"
     >
-      <div className="flex items-center gap-3">
-        <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-        <div className="text-sm text-amber-800">
-          <span className="font-semibold">Regulatory Data Notice: </span>
+      <div className="flex items-center gap-2.5">
+        <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+        <div className="text-xs text-amber-900 leading-relaxed">
+          <span className="font-semibold text-amber-950">Regulatory Ingestion Notice: </span>
           {lastRefresh ? (
             <span>
-              Last successful sync was on {new Date(lastRefresh).toLocaleString()}. Ingestion may be overdue.
+              Last successful sync on {new Date(lastRefresh).toLocaleString()}. OpenFDA stream refresh recommended.
             </span>
           ) : (
-            <span>No data ingestion has succeeded yet. Public signals have not been pulled.</span>
+            <span>Initial regulatory dataset not yet synced into local registry.</span>
           )}
         </div>
       </div>
@@ -120,7 +120,7 @@ export const StaleDataBanner: React.FC<{
         <button
           type="button"
           onClick={onRefreshClick}
-          className="text-xs font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-3 py-1.5 rounded transition-colors whitespace-nowrap ml-4"
+          className="text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 shadow-2xs px-3.5 py-1.5 rounded-lg transition-colors whitespace-nowrap self-start sm:self-auto cursor-pointer"
         >
           Run Sync Now
         </button>

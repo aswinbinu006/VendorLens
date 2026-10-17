@@ -2,13 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Tanker';
+  src: url('/fonts/Tanker-Regular.woff2') format('woff2'),
+       url('/fonts/Tanker-Regular.woff') format('woff'),
+       url('/fonts/Tanker-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url('/fonts/BebasNeue-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
+  /* Tanker display typography specifically for landing page and marketing display */
+  .font-heading {
+    font-family: 'Tanker', 'Bebas Neue', sans-serif;
+    font-weight: 400 !important;
+    line-height: 1.05;
+    letter-spacing: 0.03em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Default headings: clean, professional Inter UI font */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    letter-spacing: -0.02em;
+  }
+
+  /* Inside the dashboard console, strictly use standard normal font as earlier */
+  .dashboard-scope h1,
+  .dashboard-scope h2,
+  .dashboard-scope h3,
+  .dashboard-scope h4,
+  .dashboard-scope h5,
+  .dashboard-scope h6,
+  .dashboard-scope .font-heading {
+    font-family: var(--font-sans) !important;
+    letter-spacing: -0.025em !important;
+    text-transform: none !important;
+    line-height: inherit !important;
+  }
+
   body {
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Accessible focus indicators */
@@ -32,3 +82,16 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+

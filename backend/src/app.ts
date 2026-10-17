@@ -85,6 +85,7 @@ export function createApp(customEnv?: Partial<EnvConfig>): Express {
           config.CORS_ORIGIN === '*' ||
           requestOrigin === config.CORS_ORIGIN ||
           requestOrigin === 'http://localhost:5173' ||
+          requestOrigin === 'http://127.0.0.1:5173' ||
           requestOrigin === 'https://vendor-lens-chi.vercel.app' ||
           requestOrigin.endsWith('.vercel.app')
         ) {
