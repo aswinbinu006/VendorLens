@@ -179,6 +179,8 @@ export class IngestionService {
     const batchSize = 100;
     for (let i = 0; i < records.length; i += batchSize) {
       const batch = records.slice(i, i + batchSize);
+      const firstItem = batch[0];
+      if (!firstItem) continue;
 
       await prisma.$transaction(
         async (tx) => {
@@ -186,7 +188,7 @@ export class IngestionService {
           const sourceIds = batch.map((item) => item.sourceId);
           const existingRecords = await tx.signal.findMany({
             where: {
-              source: batch[0].source,
+              source: firstItem.source,
               sourceId: { in: sourceIds },
             },
             select: {
